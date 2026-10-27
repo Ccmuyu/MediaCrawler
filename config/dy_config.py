@@ -28,10 +28,11 @@ PUBLISH_TIME_TYPE = 0
 # 4. Short link: "https://v.douyin.com/drIPtQ_WPWY/"
 # 5. Pure video ID: "7280854932641664319"
 DY_SPECIFIED_ID_LIST = [
-    "https://www.douyin.com/video/7525538910311632128",
-    "https://v.douyin.com/drIPtQ_WPWY/",
-    "https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE?from_tab_name=main&modal_id=7525538910311632128",
-    "7202432992642387233",
+    # "https://www.douyin.com/video/7525538910311632128",
+    # "https://v.douyin.com/drIPtQ_WPWY/",
+    # "https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE?from_tab_name=main&modal_id=7525538910311632128",
+    # "7202432992642387233",
+    "https://www.douyin.com/user/MS4wLjABAAAAJKJMdp6cK-EKxBXIXFSPjsucdAC14C0usGomBafneWM?from_tab_name=main&modal_id=7695697824512328595&vid=7695697824512328595"
     # ........................
 ]
 
