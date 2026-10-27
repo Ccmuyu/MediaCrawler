@@ -1,0 +1,82 @@
+
+uv run main.py --platform dy --lt qrcode --type detail --save_data_option jsonl --save_data_path c:\crawl
+
+uv run main.py --platform dy --lt qrcode --type detail --save_data_option jsonl --save_data_path c:\crawl --get_media true
+
+uv run main.py --platform dy --lt qrcode --type creator --creator_id "https://www.douyin.com/user/MS4wLjABAAAAjmJZiiOIDNzPeHKEpXW0I6HmgbewYvFeGx7jyKNDl0k" --save_data_option jsonl --save_data_path c:\crawl
+
+# 只要视频，不要评论
+uv run main.py --platform dy --lt qrcode --type creator --creator_id "https://www.douyin.com/user/MS4wLjABAAAAJKJMdp6cK-EKxBXIXFSPjsucdAC14C0usGomBafneWM" --save_data_option jsonl --save_data_path c:\crawl --get_comment false --get_media true
+
+# 指定视频ID
+uv run main.py --platform dy --lt qrcode --type detail --specified_id "https://www.douyin.com/video/7695697824512328595" --save_data_option jsonl --save_data_path c:\crawl
+uv run main.py --platform dy --lt qrcode --type detail --specified_id "7696100360608032229,7525538910311632128" --get_media true --save_data_option jsonl --save_data_path c:\crawl
+
+# 上面这条命令
+# 抖音、扫码登录、详情模式。未传 --specified_id，使用 config/dy_config.py 的 DY_SPECIFIED_ID_LIST。
+# 视频信息和评论写成 jsonl，目录为 c:\crawl\douyin\jsonl\
+#   detail_contents_日期.jsonl   视频信息（不是视频文件）
+#   detail_comments_日期.jsonl   评论
+# 视频文件默认不下载。需要文件时加 --get_media true，落到 c:\crawl\dy\media\{视频ID}\
+
+# 参数定义在 cmd_arg/arg.py 的 parse_cmd()。
+# 不传时的默认值来自 config/base_config.py，解析后写回 config。
+# 布尔值写成 true/false（也接受 yes/no、t/f、y/n、1/0），例如 --get_comment false。
+
+# Basic Configuration
+# --platform                  平台，默认 xhs。xhs 小红书 | dy 抖音 | ks 快手 | bili B站 | wb 微博 | tieba 贴吧 | zhihu 知乎
+# --type                      爬取类型，默认 search。search 关键词 | detail 指定帖子 | creator 指定创作者
+# --start                     起始页，默认 1
+# --keywords                  关键词，英文逗号分隔，默认 编程副业,编程兼职。仅 search 使用
+# --specified_id              detail 的帖子 ID 或 URL，英文逗号分隔。空则用各平台配置文件里的列表
+# --creator_id                creator 的创作者 ID 或 URL，英文逗号分隔。空则用各平台配置文件里的列表
+# --crawler_max_notes_count   最多抓多少条帖子/视频，默认 15
+
+# Account Configuration
+# --lt                        登录方式，默认 qrcode。qrcode 扫码 | phone 手机号 | cookie Cookie
+# --cookies                   Cookie 内容，仅 --lt cookie 时使用，默认空
+
+# Comment Configuration
+# --get_comment                       是否抓一级评论，默认 true
+# --get_sub_comment                   是否抓二级评论，默认 false
+# --max_comments_count_singlenotes    每条帖子最多抓多少条一级评论，默认 10
+
+# Storage Configuration
+# --get_media           是否下载封面/图片/视频文件，默认 false。贴吧、知乎无媒体字段
+# --save_data_option    保存格式，默认 jsonl。csv | db(MySQL) | json | jsonl | sqlite | mongodb | excel | postgres
+# --save_data_path      保存根目录，默认空，写到项目 data/。实际路径：{路径或 data}/{平台}/{格式}/
+#                       抖音文本数据的平台名是 douyin，媒体文件的平台名是 dy
+# --init_db             只建表后退出：sqlite | mysql | postgres。单独写 --init_db 等价于 sqlite
+#                       保存方式为 sqlite / db / mysql / postgres 时，不写 --init_db 也会自动建表
+
+# Runtime Configuration
+# --headless            无头浏览器，默认 false。同时作用于 Playwright 和 CDP
+
+# Performance Configuration
+# --max_concurrency_num 并发数，默认 1
+
+# Proxy Configuration
+# --enable_ip_proxy           是否启用代理，默认 false
+# --ip_proxy_pool_count       代理池大小，默认 2
+# --ip_proxy_provider_name    代理商，默认 kuaidaili。kuaidaili | wandouhttp | static
+# --static_proxy_url          static 时使用，例如 http://user:password@host:port
+
+# 命令行改不了、只能改 config/base_config.py
+# ENABLE_CDP_MODE          是否用本机 Chrome/Edge 的 CDP，当前 True
+# CDP_CONNECT_EXISTING     True 时连接已开启远程调试的浏览器（端口 CDP_DEBUG_PORT，默认 9222），不自己启动
+#                          False 时程序自己启动 Chrome
+# CDP_DEBUG_PORT           默认 9222
+# CUSTOM_BROWSER_PATH      浏览器路径，空则自动检测
+# CDP_HEADLESS             CDP 无头；--headless 会同时改它和 HEADLESS
+# BROWSER_LAUNCH_TIMEOUT   浏览器连接超时秒数，默认 60
+# AUTO_CLOSE_BROWSER       结束时是否关闭本次启动的浏览器，默认 True
+# SAVE_LOGIN_STATE         是否保存登录态，默认 True
+# XHS_INTERNATIONAL        是否用海外版小红书 rednote.com，默认 False
+# CRAWLER_MAX_SLEEP_SEC    请求间隔秒数，默认 2
+# ENABLE_GET_WORDCLOUD     是否生成评论词云，默认 False。仅 json/jsonl
+# DISABLE_SSL_VERIFY       是否关闭 SSL 校验，默认 False
+
+
+
+浏览器起来后会在 http://localhost:9222/json/version 公布一个 WebSocket 地址（webSocketDebuggerUrl）。Playwright 连上这个地址，之后开标签、读 Cookie、读 localStorage 都走这条连接：
+
