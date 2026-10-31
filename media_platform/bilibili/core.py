@@ -43,6 +43,7 @@ from playwright._impl._errors import TargetClosedError
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader, is_ffmpeg_available
+from media_downloader.layout import apply_creator_video_layout_item
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import bilibili as bilibili_store
 from tools import utils
@@ -617,8 +618,13 @@ class BilibiliCrawler(AbstractCrawler):
             return
 
         downloader = self._get_media_downloader()
+        creator_id = bili_media.extract_creator_id(video_item_view)
 
-        cover_item = bili_media.build_cover_item(video_item_view, content_id)
+        # 封面、DASH 和直链是分次构造的，都要过布局；否则创作者模式下封面仍会单独落盘
+        cover_item = apply_creator_video_layout_item(
+            bili_media.build_cover_item(video_item_view, content_id),
+            creator_id,
+        )
         if cover_item is not None:
             await downloader.download(cover_item)
 
@@ -642,7 +648,10 @@ class BilibiliCrawler(AbstractCrawler):
             # 此时退到更低的可用档位往往能成功，比直接放弃（或退回更低质的直链）更好
             quality: Optional[int] = getattr(config, "BILI_QN", 80)
             while quality is not None:
-                dash_item = bili_media.build_dash_item(play_info, content_id, preferred_quality=quality)
+                dash_item = apply_creator_video_layout_item(
+                    bili_media.build_dash_item(play_info, content_id, preferred_quality=quality),
+                    creator_id,
+                )
                 if dash_item is None:
                     break
                 if await downloader.download(dash_item) is not None:
@@ -660,14 +669,20 @@ class BilibiliCrawler(AbstractCrawler):
             utils.logger.info("[BilibiliCrawler.download_media] 未检测到 ffmpeg，使用 mp4 直链下载（低清晰度）")
 
         durl_play_info = play_info
-        durl_item = bili_media.build_durl_item(durl_play_info, content_id)
+        durl_item = apply_creator_video_layout_item(
+            bili_media.build_durl_item(durl_play_info, content_id),
+            creator_id,
+        )
         if durl_item is None:
             # DASH 请求不会返回 durl，需要再按 mp4 格式请求一次
             durl_play_info = await self.get_video_play_url_task(
                 aid, cid, semaphore, fnval=bili_media.MP4_FNVAL
             ) or {}
             await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
-            durl_item = bili_media.build_durl_item(durl_play_info, content_id)
+            durl_item = apply_creator_video_layout_item(
+                bili_media.build_durl_item(durl_play_info, content_id),
+                creator_id,
+            )
 
         if durl_item is None:
             utils.logger.error(

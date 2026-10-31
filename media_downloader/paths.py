@@ -78,6 +78,8 @@ _WINDOWS_RESERVED = frozenset(
     }
 )
 MAX_COMPONENT_LENGTH = 64
+# 创作者 sec_uid 一类 ID 经常超过 64，目录名单独放宽，避免不同创作者被截成同一个文件夹
+CONTENT_ID_MAX_LENGTH = 160
 MEDIA_DIR_NAME = "media"
 
 
@@ -102,7 +104,7 @@ def redact_url(url) -> str:
     return f"{parts.scheme}://{parts.netloc}{parts.path}"
 
 
-def sanitize_component(value: str, fallback: str = "unknown") -> str:
+def sanitize_component(value: str, fallback: str = "unknown", max_length: int = MAX_COMPONENT_LENGTH) -> str:
     """清洗单个路径片段，防止路径穿越与非法字符。
 
     - 只保留 ``[A-Za-z0-9._-]``，其余替换为 ``_``
@@ -113,7 +115,7 @@ def sanitize_component(value: str, fallback: str = "unknown") -> str:
     cleaned = _ILLEGAL_CHARS.sub("_", (value or "").strip())
     cleaned = cleaned.lstrip(".")
     cleaned = cleaned.replace("..", "_")
-    cleaned = cleaned[:MAX_COMPONENT_LENGTH]
+    cleaned = cleaned[: max(1, max_length)]
     if not cleaned:
         return fallback
     if cleaned.split(".")[0].upper() in _WINDOWS_RESERVED:
@@ -162,7 +164,9 @@ def build_media_dir(base_dir: Path, platform: str, content_id) -> Path:
     safe_platform = sanitize_component(platform, "unknown")
     raw_content_id = "" if content_id is None else str(content_id)
     safe_content_id = sanitize_component(
-        raw_content_id, fallback=hashlib.sha1(raw_content_id.encode("utf-8")).hexdigest()[:16]
+        raw_content_id,
+        fallback=hashlib.sha1(raw_content_id.encode("utf-8")).hexdigest()[:16],
+        max_length=CONTENT_ID_MAX_LENGTH,
     )
     return Path(base_dir) / safe_platform / MEDIA_DIR_NAME / safe_content_id
 

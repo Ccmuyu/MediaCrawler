@@ -65,6 +65,13 @@ class CrawlerTypeEnum(str, Enum):
     CREATOR = "creator"
 
 
+class MediaSaveLayoutEnum(str, Enum):
+    """How creator-mode media files are arranged on disk."""
+
+    POST = "post"
+    CREATOR = "creator"
+
+
 class SaveDataOptionEnum(str, Enum):
     """Data save option enumeration"""
 
@@ -225,6 +232,16 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 show_default=True,
             ),
         ] = str(config.ENABLE_GET_MEDIA),
+        media_save_layout: Annotated[
+            MediaSaveLayoutEnum,
+            typer.Option(
+                "--media_save_layout",
+                help="Creator-mode media layout (post=one folder per post with cover and video | creator=videos only, grouped by creator id)",
+                rich_help_panel="Storage Configuration",
+            ),
+        ] = _coerce_enum(
+            MediaSaveLayoutEnum, config.MEDIA_SAVE_LAYOUT, MediaSaveLayoutEnum.POST
+        ),
         headless: Annotated[
             str,
             typer.Option(
@@ -364,6 +381,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         config.ENABLE_GET_COMMENTS = enable_comment
         config.ENABLE_GET_SUB_COMMENTS = enable_sub_comment
         config.ENABLE_GET_MEDIA = enable_media
+        config.MEDIA_SAVE_LAYOUT = media_save_layout.value
         config.HEADLESS = enable_headless
         config.CDP_HEADLESS = enable_headless
         config.SAVE_DATA_OPTION = save_data_option.value
@@ -421,6 +439,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
             get_comment=config.ENABLE_GET_COMMENTS,
             get_sub_comment=config.ENABLE_GET_SUB_COMMENTS,
             get_media=config.ENABLE_GET_MEDIA,
+            media_save_layout=config.MEDIA_SAVE_LAYOUT,
             headless=config.HEADLESS,
             save_data_option=config.SAVE_DATA_OPTION,
             init_db=init_db_value,

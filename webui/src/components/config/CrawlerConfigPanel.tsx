@@ -354,12 +354,16 @@ export function CrawlerConfigPanel() {
                 disabled={isDisabled}
                 title={t('field.commentExtraction')}
               />
-              <OptionRow
-                checked={config.enable_sub_comments}
-                onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked })}
-                disabled={isDisabled || !config.enable_comments}
-                title={t('field.subComments')}
-              />
+              {config.enable_comments ? (
+                <div className="ml-7 border-l border-cyber-border-DEFAULT pl-3">
+                  <OptionRow
+                    checked={config.enable_sub_comments}
+                    onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked })}
+                    disabled={isDisabled}
+                    title={t('field.subComments')}
+                  />
+                </div>
+              ) : null}
               <OptionRow
                 checked={config.enable_media}
                 onCheckedChange={(checked) => updateConfig({ enable_media: checked })}
@@ -367,6 +371,27 @@ export function CrawlerConfigPanel() {
                 title={t('field.downloadMedia')}
                 hint={t('field.downloadMediaHint')}
               />
+              {config.enable_media && config.crawler_type === 'creator' ? (
+                <div className="mb-2 ml-7 border-l border-cyber-border-DEFAULT py-2 pl-8">
+                  <Field label={t('field.mediaSaveLayout')} hint={t('field.mediaSaveLayoutHint')}>
+                    <Select
+                      value={config.media_save_layout || 'post'}
+                      onValueChange={(value) =>
+                        updateConfig({ media_save_layout: value as 'post' | 'creator' })
+                      }
+                      disabled={isDisabled}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="post">{t('field.mediaSaveLayoutPost')}</SelectItem>
+                        <SelectItem value="creator">{t('field.mediaSaveLayoutCreator')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+              ) : null}
               <OptionRow
                 checked={config.headless}
                 onCheckedChange={(checked) => updateConfig({ headless: checked })}

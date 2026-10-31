@@ -139,6 +139,17 @@ def extract_cover_url(note_item: Dict) -> str:
     return images[0] if images else ""
 
 
+def extract_creator_id(note_item: Dict) -> str:
+    """创作者目录名。user_id 与 userid 在不同接口里都会出现，只认一个会把目录留空。"""
+    if not isinstance(note_item, dict):
+        return ""
+    user = note_item.get("user")
+    if not isinstance(user, dict):
+        return ""
+    creator_id = user.get("user_id") or user.get("userid") or ""
+    return str(creator_id)
+
+
 def build_media_items(note_item: Dict) -> List[MediaItem]:
     """把一个笔记转换成待下载的媒体任务列表。
 

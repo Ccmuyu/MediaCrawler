@@ -61,6 +61,10 @@
     "subComments": "子评论",
     "downloadMedia": "下载媒体",
     "downloadMediaHint": "下载封面与视频（图文笔记下载图片），支持小红书/抖音/快手/B站/微博",
+    "mediaSaveLayout": "媒体保存方案",
+    "mediaSaveLayoutHint": "默认仍是原来的方案。新方案只下载视频，并放到以创作者 ID 命名的目录。",
+    "mediaSaveLayoutPost": "原来的方案：每个作品一个目录（封面 + 视频）",
+    "mediaSaveLayoutCreator": "新方案：仅视频，放到创作者 ID 目录",
     "headlessMode": "无头模式",
     "headlessModeHint": "无 GUI 运行浏览器"
   },

@@ -127,6 +127,20 @@ def media_source_mblog(mblog: Dict) -> Dict:
     return mblog
 
 
+def extract_creator_id(mblog: Dict) -> str:
+    """创作者目录名，用当前这条微博作者的 user.id。
+
+    转发微博的视频来自原博，目录仍跟这条微博的作者，避免归进原作者文件夹。
+    """
+    if not isinstance(mblog, dict):
+        return ""
+    user = mblog.get("user")
+    if not isinstance(user, dict):
+        return ""
+    creator_id = user.get("id") or ""
+    return str(creator_id)
+
+
 def build_media_items(mblog: Dict) -> List[MediaItem]:
     """把一条微博转换成待下载的媒体任务列表。
 

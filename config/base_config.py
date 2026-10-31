@@ -110,6 +110,12 @@ MAX_CONCURRENCY_NUM = 1
 # 命令行开关：--get_media
 ENABLE_GET_MEDIA = False
 
+# 创作者模式下的媒体目录布局。仅当 CRAWLER_TYPE 为 creator 时生效。
+# post: 每个作品一个目录，保存封面和视频（或图文图片）
+# creator: 只下载视频，全部放到以创作者 ID 命名的目录里
+# 命令行开关：--media_save_layout
+MEDIA_SAVE_LAYOUT = "post"
+
 # Whether to enable comment crawling mode. Comment crawling is enabled by default.
 ENABLE_GET_COMMENTS = True
 

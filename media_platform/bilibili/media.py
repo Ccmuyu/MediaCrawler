@@ -76,6 +76,15 @@ def _stream_backup_urls(stream) -> tuple:
     return tuple(url for url in backups if isinstance(url, str) and url)
 
 
+def extract_creator_id(view: Dict) -> str:
+    """创作者目录名，取稿件 owner.mid，与空间 URL 里的用户 ID 一致。"""
+    owner = _as_dict(view).get("owner")
+    if not isinstance(owner, dict):
+        return ""
+    mid = owner.get("mid")
+    return "" if mid is None else str(mid)
+
+
 def build_cover_item(view: Dict, content_id: str) -> Optional[MediaItem]:
     """封面地址来自稿件详情里的 pic 字段"""
     cover_url = _as_dict(view).get("pic")

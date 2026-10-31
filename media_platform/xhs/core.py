@@ -35,6 +35,7 @@ from tenacity import RetryError
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
+from media_downloader.layout import apply_creator_video_layout
 from model.m_xiaohongshu import NoteUrlInfo, CreatorUrlInfo
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import xhs as xhs_store
@@ -492,7 +493,10 @@ class XiaoHongShuCrawler(AbstractCrawler):
         if not config.ENABLE_GET_MEDIA:
             return
         try:
-            items = xhs_media.build_media_items(note_detail)
+            items = apply_creator_video_layout(
+                xhs_media.build_media_items(note_detail),
+                xhs_media.extract_creator_id(note_detail),
+            )
             if items:
                 await self._get_media_downloader().download_all(items)
         except Exception as exc:

@@ -233,7 +233,7 @@ uv run main.py --platform xhs --type detail --specified_id <帖子URL或ID> --ge
 # 或在 config/base_config.py 中设置 ENABLE_GET_MEDIA = True
 ```
 
-**落盘结构**（`SAVE_DATA_PATH` 为空时落在 `data/` 下）：
+**落盘结构**（`SAVE_DATA_PATH` 为空时落在 `data/` 下）。默认每个作品一个目录：
 
 ```
 data/xhs/media/{帖子ID}/
@@ -241,6 +241,20 @@ data/xhs/media/{帖子ID}/
 ├── video.mp4     # 视频（B站为 DASH 合流产物）
 └── 001.jpg       # 图文帖的图片
 ```
+
+创作者模式可以改成只下载视频，并按创作者 ID 归档。WebUI 在「下载媒体」打开后选择「仅视频，按创作者 ID 归档」，或：
+
+```shell
+uv run main.py --platform dy --type creator --creator_id <创作者URL或ID> --get_media true --media_save_layout creator
+```
+
+```
+data/dy/media/{创作者ID}/
+├── {作品ID}.mp4
+└── {作品ID}.mp4
+```
+
+图文作品在这种布局下会跳过。未指定时仍是 `--media_save_layout post`。
 
 **支持平台**：小红书、抖音、快手、B站、微博。贴吧与知乎的数据结构中没有媒体字段，暂不支持。
 

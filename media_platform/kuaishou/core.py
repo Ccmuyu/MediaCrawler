@@ -36,6 +36,7 @@ from playwright.async_api import (
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
+from media_downloader.layout import apply_creator_video_layout
 from model.m_kuaishou import VideoUrlInfo, CreatorUrlInfo
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import kuaishou as kuaishou_store
@@ -512,7 +513,10 @@ class KuaishouCrawler(AbstractCrawler):
         if not config.ENABLE_GET_MEDIA:
             return
         try:
-            items = kuaishou_media.build_media_items(video_item)
+            items = apply_creator_video_layout(
+                kuaishou_media.build_media_items(video_item),
+                kuaishou_media.extract_creator_id(video_item),
+            )
             if items:
                 await self._get_media_downloader().download_all(items)
         except Exception as exc:

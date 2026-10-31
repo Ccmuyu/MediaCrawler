@@ -49,6 +49,12 @@ class CrawlerTypeEnum(str, Enum):
     CREATOR = "creator"
 
 
+class MediaSaveLayoutEnum(str, Enum):
+    """Creator-mode media directory layout."""
+    POST = "post"
+    CREATOR = "creator"
+
+
 class SaveDataOptionEnum(str, Enum):
     """Data save option"""
     CSV = "csv"
@@ -72,6 +78,7 @@ class CrawlerStartRequest(BaseModel):
     enable_comments: bool = True
     enable_sub_comments: bool = False
     enable_media: bool = False
+    media_save_layout: MediaSaveLayoutEnum = MediaSaveLayoutEnum.POST
     save_option: SaveDataOptionEnum = SaveDataOptionEnum.JSONL
     cookies: str = ""
     headless: bool = False
