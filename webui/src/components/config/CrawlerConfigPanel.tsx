@@ -1,7 +1,7 @@
-import type { ComponentType, ReactNode, KeyboardEvent } from 'react'
+import type { ReactNode, KeyboardEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Database, Globe, Image as ImageIcon, KeyRound, MessageSquare, Play, Square, X } from 'lucide-react'
+import { Play, Square, X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -11,33 +11,27 @@ import { useCrawlerStore } from '@/store/crawlerStore'
 import { usePlatforms, useConfigOptions, useStartCrawler, useStopCrawler } from '@/hooks/useCrawler'
 import { ParsedIdList } from './ParsedIdList'
 
+const areaClass =
+  'min-h-[92px] w-full rounded-lg border border-cyber-border-DEFAULT bg-cyber-bg-primary px-3 py-2.5 text-sm leading-relaxed text-cyber-text-primary placeholder:text-cyber-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber-text-primary/10 disabled:cursor-not-allowed disabled:opacity-50'
+
 type SectionProps = {
+  index: string
   title: string
   description: string
-  icon: ComponentType<{ className?: string }>
   children: ReactNode
-  className?: string
 }
 
-function Section({ title, description, icon: Icon, children, className = '' }: SectionProps) {
+function Section({ index, title, description, children }: SectionProps) {
   return (
-    <section className={`rounded-lg glass-panel float-panel overflow-hidden ${className}`}>
-      <header className="px-4 py-3 border-b border-cyber-border-subtle/50 flex items-center gap-3 bg-cyber-bg-tertiary/30">
-        <div className="h-8 w-8 rounded-md bg-cyber-bg-tertiary border border-cyber-border-subtle flex items-center justify-center flex-shrink-0">
-          <Icon className="h-4 w-4 text-cyber-neon-cyan" />
+    <section className="border-t border-cyber-border-subtle pt-7 first:border-t-0 first:pt-0">
+      <header className="mb-4 flex items-baseline justify-between gap-4">
+        <div>
+          <h2 className="font-serif text-lg text-cyber-text-primary">{title}</h2>
+          <p className="mt-0.5 text-xs text-cyber-text-muted">{description}</p>
         </div>
-        <div className="min-w-0">
-          <div className="text-xs font-mono font-semibold text-cyber-text-primary tracking-wide">
-            {title}
-          </div>
-          <div className="text-[10px] text-cyber-text-muted leading-snug truncate">
-            {description}
-          </div>
-        </div>
+        <span className="font-mono text-[11px] tracking-[0.18em] text-cyber-text-muted">{index}</span>
       </header>
-      <div className="p-4 space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
     </section>
   )
 }
@@ -51,15 +45,9 @@ type FieldProps = {
 function Field({ label, hint, children }: FieldProps) {
   return (
     <div className="space-y-2">
-      <div className="space-y-0.5">
-        <Label className="text-xs text-cyber-text-secondary font-mono">
-          {label}
-        </Label>
-        {hint ? (
-          <p className="text-[10px] text-cyber-text-muted leading-snug">
-            {hint}
-          </p>
-        ) : null}
+      <div className="space-y-1">
+        <Label>{label}</Label>
+        {hint ? <p className="text-xs leading-relaxed text-cyber-text-muted">{hint}</p> : null}
       </div>
       {children}
     </div>
@@ -75,8 +63,6 @@ type KeywordInputProps = {
 
 function KeywordInput({ value, onChange, placeholder, disabled }: KeywordInputProps) {
   const [inputValue, setInputValue] = useState('')
-
-  // 将逗号分隔的字符串转换为数组
   const keywords = value ? value.split(',').map((k) => k.trim()).filter(Boolean) : []
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -84,16 +70,14 @@ function KeywordInput({ value, onChange, placeholder, disabled }: KeywordInputPr
       e.preventDefault()
       const trimmed = inputValue.trim()
       if (trimmed && !keywords.includes(trimmed)) {
-        const newKeywords = [...keywords, trimmed]
-        onChange(newKeywords.join(','))
+        onChange([...keywords, trimmed].join(','))
         setInputValue('')
       }
     }
   }
 
   const removeKeyword = (keywordToRemove: string) => {
-    const newKeywords = keywords.filter((k) => k !== keywordToRemove)
-    onChange(newKeywords.join(','))
+    onChange(keywords.filter((k) => k !== keywordToRemove).join(','))
   }
 
   return (
@@ -104,29 +88,52 @@ function KeywordInput({ value, onChange, placeholder, disabled }: KeywordInputPr
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-9 text-xs"
       />
       {keywords.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {keywords.map((keyword) => (
             <span
               key={keyword}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-cyber-neon-cyan/10 border border-cyber-neon-cyan/30 text-cyber-neon-cyan text-xs font-mono"
+              className="inline-flex items-center gap-1.5 rounded-full bg-cyber-bg-tertiary px-2.5 py-1 text-xs text-cyber-text-primary"
             >
               {keyword}
               {!disabled && (
                 <button
                   type="button"
                   onClick={() => removeKeyword(keyword)}
-                  className="hover:text-cyber-neon-pink transition-colors"
+                  className="text-cyber-text-muted transition-colors hover:text-cyber-text-primary"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="h-3 w-3" />
                 </button>
               )}
             </span>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function OptionRow({
+  checked,
+  onCheckedChange,
+  disabled,
+  title,
+  hint,
+}: {
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+  disabled?: boolean
+  title: string
+  hint?: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-cyber-bg-primary">
+      <Checkbox checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} className="mt-0.5" />
+      <span className="min-w-0">
+        <span className="block text-sm text-cyber-text-primary">{title}</span>
+        {hint ? <span className="mt-0.5 block text-xs leading-relaxed text-cyber-text-muted">{hint}</span> : null}
+      </span>
     </div>
   )
 }
@@ -146,55 +153,144 @@ export function CrawlerConfigPanel() {
   const isRunning = status === 'running'
   const isBusy = isStarting || isStopping || status === 'stopping'
 
-  const handleStart = () => {
-    startCrawler(config)
-  }
-
-  const handleStop = () => {
-    stopCrawler()
-  }
-
   return (
-    <div className="space-y-4 animate-slide-up">
-      {/* Row 1: Three Config Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Column 1: Target & Mode Section */}
-        <Section
-          title={t('section.targetMatrix.title')}
-          description={t('section.targetMatrix.description')}
-          icon={Globe}
-        >
-          <Field label={t('field.platform')}>
-            <Select
-              value={config.platform}
-              onValueChange={(value) => updateConfig({ platform: value })}
-              disabled={isDisabled}
-            >
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder={t('field.platformPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {platforms?.map((platform) => (
-                  <SelectItem key={platform.value} value={platform.value}>
-                    {platform.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        <div className="mb-7">
+          <p className="text-xs text-cyber-text-muted">{t('panel.eyebrow')}</p>
+          <h1 className="mt-1 font-serif text-[28px] leading-none text-cyber-text-primary">{t('panel.title')}</h1>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('field.crawlType')}>
+        <div className="space-y-7">
+          <Section
+            index="01"
+            title={t('section.targetMatrix.title')}
+            description={t('section.targetMatrix.description')}
+          >
+            <Field label={t('field.platform')}>
               <Select
-                value={config.crawler_type}
-                onValueChange={(value) => updateConfig({ crawler_type: value })}
+                value={config.platform}
+                onValueChange={(value) => updateConfig({ platform: value })}
                 disabled={isDisabled}
               >
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder={t('field.crawlTypePlaceholder')} />
+                <SelectTrigger>
+                  <SelectValue placeholder={t('field.platformPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {options?.crawler_types.map((type) => (
+                  {platforms?.map((platform) => (
+                    <SelectItem key={platform.value} value={platform.value}>
+                      {platform.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t('field.crawlType')}>
+                <Select
+                  value={config.crawler_type}
+                  onValueChange={(value) => updateConfig({ crawler_type: value })}
+                  disabled={isDisabled}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('field.crawlTypePlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options?.crawler_types.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label={t('field.startPage')}>
+                <Input
+                  type="number"
+                  min={1}
+                  value={config.start_page}
+                  onChange={(e) => updateConfig({ start_page: parseInt(e.target.value) || 1 })}
+                  disabled={isDisabled}
+                />
+              </Field>
+            </div>
+
+            {config.crawler_type === 'search' && (
+              <Field label={t('field.keywords')} hint={t('field.keywordsHint')}>
+                <KeywordInput
+                  placeholder={t('field.keywordsPlaceholder')}
+                  value={config.keywords}
+                  onChange={(keywords) => updateConfig({ keywords })}
+                  disabled={isDisabled}
+                />
+              </Field>
+            )}
+
+            {config.crawler_type === 'detail' && (
+              <Field label={t('field.specifiedIds')} hint={t('field.specifiedIdsHint')}>
+                <textarea
+                  value={config.specified_ids}
+                  onChange={(e) => updateConfig({ specified_ids: e.target.value })}
+                  disabled={isDisabled}
+                  placeholder={t(`field.specifiedIdsPlaceholder.${config.platform}`, t('field.specifiedIdsPlaceholder.default'))}
+                  className={`${areaClass} font-mono text-xs`}
+                />
+                <ParsedIdList
+                  value={config.specified_ids}
+                  platform={config.platform}
+                  type="detail"
+                  disabled={isDisabled}
+                />
+                {config.platform === 'xhs' && (
+                  <div className="rounded-lg bg-cyber-neon-orange/10 px-3 py-2.5 text-xs leading-relaxed text-cyber-text-secondary">
+                    {t('warning.xhsToken')}
+                  </div>
+                )}
+              </Field>
+            )}
+
+            {config.crawler_type === 'creator' && (
+              <Field label={t('field.creatorIds')} hint={t('field.creatorIdsHint')}>
+                <textarea
+                  value={config.creator_ids}
+                  onChange={(e) => updateConfig({ creator_ids: e.target.value })}
+                  disabled={isDisabled}
+                  placeholder={t(`field.creatorIdsPlaceholder.${config.platform}`, t('field.creatorIdsPlaceholder.default'))}
+                  className={`${areaClass} font-mono text-xs`}
+                />
+                <ParsedIdList
+                  value={config.creator_ids}
+                  platform={config.platform}
+                  type="creator"
+                  disabled={isDisabled}
+                />
+                {config.platform === 'xhs' && (
+                  <div className="rounded-lg bg-cyber-neon-orange/10 px-3 py-2.5 text-xs leading-relaxed text-cyber-text-secondary">
+                    {t('warning.xhsToken')}
+                  </div>
+                )}
+              </Field>
+            )}
+          </Section>
+
+          <Section
+            index="02"
+            title={t('section.authMatrix.title')}
+            description={t('section.authMatrix.description')}
+          >
+            <Field label={t('field.loginMethod')}>
+              <Select
+                value={config.login_type}
+                onValueChange={(value) => updateConfig({ login_type: value })}
+                disabled={isDisabled}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('field.loginMethodPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {options?.login_types.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
@@ -203,226 +299,104 @@ export function CrawlerConfigPanel() {
               </Select>
             </Field>
 
-            <Field label={t('field.startPage')}>
-              <Input
-                type="number"
-                min={1}
-                value={config.start_page}
-                onChange={(e) => updateConfig({ start_page: parseInt(e.target.value) || 1 })}
+            {config.login_type === 'cookie' ? (
+              <Field label={t('field.cookies')} hint={t('field.cookiesHint')}>
+                <textarea
+                  value={config.cookies}
+                  onChange={(e) => updateConfig({ cookies: e.target.value })}
+                  disabled={isDisabled}
+                  placeholder={t('field.cookiesPlaceholder')}
+                  className={`${areaClass} font-mono text-xs`}
+                />
+              </Field>
+            ) : null}
+
+            {config.login_type === 'cookie' && (config.platform === 'xhs' || config.platform === 'dy') ? (
+              <div className="rounded-lg bg-cyber-neon-orange/10 px-3 py-2.5 text-xs leading-relaxed text-cyber-text-secondary">
+                {t('warning.cookieSlider')}
+              </div>
+            ) : null}
+          </Section>
+
+          <Section
+            index="03"
+            title={t('section.outputConfig.title')}
+            description={t('section.outputConfig.description')}
+          >
+            <Field label={t('field.saveFormat')}>
+              <Select
+                value={config.save_option}
+                onValueChange={(value) => updateConfig({ save_option: value })}
                 disabled={isDisabled}
-                className="h-9 text-xs"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('field.saveFormatPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {options?.save_options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
-          </div>
 
-          {/* 根据爬虫类型显示不同的输入框 */}
-          {config.crawler_type === 'search' && (
-            <Field label={t('field.keywords')} hint={t('field.keywordsHint')}>
-              <KeywordInput
-                placeholder={t('field.keywordsPlaceholder')}
-                value={config.keywords}
-                onChange={(keywords) => updateConfig({ keywords })}
-                disabled={isDisabled}
-              />
-            </Field>
-          )}
-
-          {config.crawler_type === 'detail' && (
-            <Field label={t('field.specifiedIds')} hint={t('field.specifiedIdsHint')}>
-              <textarea
-                value={config.specified_ids}
-                onChange={(e) => updateConfig({ specified_ids: e.target.value })}
-                disabled={isDisabled}
-                placeholder={t(`field.specifiedIdsPlaceholder.${config.platform}`, t('field.specifiedIdsPlaceholder.default'))}
-                className="min-h-[60px] w-full rounded-md border border-cyber-border-DEFAULT bg-cyber-bg-tertiary px-3 py-2 text-xs font-mono text-cyber-text-primary placeholder:text-cyber-text-muted focus-visible:outline-none focus-visible:border-cyber-neon-cyan/50 focus-visible:shadow-cyber-soft disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none"
-              />
-              <ParsedIdList
-                value={config.specified_ids}
-                platform={config.platform}
-                type="detail"
-                disabled={isDisabled}
-              />
-              {config.platform === 'xhs' && (
-                <div className="mt-2 rounded-lg border border-cyber-neon-orange/30 bg-cyber-neon-orange/5 p-2 text-[10px] leading-snug text-cyber-neon-orange font-mono">
-                  {t('warning.xhsToken')}
-                </div>
-              )}
-            </Field>
-          )}
-
-          {config.crawler_type === 'creator' && (
-            <Field label={t('field.creatorIds')} hint={t('field.creatorIdsHint')}>
-              <textarea
-                value={config.creator_ids}
-                onChange={(e) => updateConfig({ creator_ids: e.target.value })}
-                disabled={isDisabled}
-                placeholder={t(`field.creatorIdsPlaceholder.${config.platform}`, t('field.creatorIdsPlaceholder.default'))}
-                className="min-h-[60px] w-full rounded-md border border-cyber-border-DEFAULT bg-cyber-bg-tertiary px-3 py-2 text-xs font-mono text-cyber-text-primary placeholder:text-cyber-text-muted focus-visible:outline-none focus-visible:border-cyber-neon-cyan/50 focus-visible:shadow-cyber-soft disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none"
-              />
-              <ParsedIdList
-                value={config.creator_ids}
-                platform={config.platform}
-                type="creator"
-                disabled={isDisabled}
-              />
-              {config.platform === 'xhs' && (
-                <div className="mt-2 rounded-lg border border-cyber-neon-orange/30 bg-cyber-neon-orange/5 p-2 text-[10px] leading-snug text-cyber-neon-orange font-mono">
-                  {t('warning.xhsToken')}
-                </div>
-              )}
-            </Field>
-          )}
-        </Section>
-
-        {/* Column 2: Authentication Section */}
-        <Section
-          title={t('section.authMatrix.title')}
-          description={t('section.authMatrix.description')}
-          icon={KeyRound}
-        >
-          <Field label={t('field.loginMethod')}>
-            <Select
-              value={config.login_type}
-              onValueChange={(value) => updateConfig({ login_type: value })}
-              disabled={isDisabled}
-            >
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder={t('field.loginMethodPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {options?.login_types.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          {config.login_type === 'cookie' ? (
-            <Field label={t('field.cookies')} hint={t('field.cookiesHint')}>
-              <textarea
-                value={config.cookies}
-                onChange={(e) => updateConfig({ cookies: e.target.value })}
-                disabled={isDisabled}
-                placeholder={t('field.cookiesPlaceholder')}
-                className="min-h-[80px] w-full rounded-md border border-cyber-border-DEFAULT bg-cyber-bg-tertiary px-3 py-2 text-xs font-mono text-cyber-text-primary placeholder:text-cyber-text-muted focus-visible:outline-none focus-visible:border-cyber-neon-cyan/50 focus-visible:shadow-cyber-soft disabled:cursor-not-allowed disabled:opacity-50 transition-all resize-none"
-              />
-            </Field>
-          ) : null}
-
-          {config.login_type === 'cookie' && (config.platform === 'xhs' || config.platform === 'dy') ? (
-            <div className="rounded-lg border border-cyber-neon-orange/30 bg-cyber-neon-orange/5 p-3 text-[11px] leading-snug text-cyber-neon-orange font-mono">
-              {t('warning.cookieSlider')}
-            </div>
-          ) : null}
-        </Section>
-
-        {/* Column 3: Output & Runtime Section */}
-        <Section
-          title={t('section.outputConfig.title')}
-          description={t('section.outputConfig.description')}
-          icon={Database}
-        >
-          <Field label={t('field.saveFormat')}>
-            <Select
-              value={config.save_option}
-              onValueChange={(value) => updateConfig({ save_option: value })}
-              disabled={isDisabled}
-            >
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder={t('field.saveFormatPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {options?.save_options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 rounded-lg border border-cyber-border-subtle bg-cyber-bg-tertiary/30 p-2.5 hover:border-cyber-border-DEFAULT transition-colors">
-              <Checkbox
+            <div className="-mx-1">
+              <OptionRow
                 checked={config.enable_comments}
-                onCheckedChange={(checked) => {
-                  const isChecked = checked === true
+                onCheckedChange={(isChecked) => {
                   updateConfig({
                     enable_comments: isChecked,
                     enable_sub_comments: isChecked ? config.enable_sub_comments : false,
                   })
                 }}
                 disabled={isDisabled}
+                title={t('field.commentExtraction')}
               />
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5 text-cyber-text-secondary" />
-                <p className="text-xs font-mono text-cyber-text-primary">{t('field.commentExtraction')}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-lg border border-cyber-border-subtle bg-cyber-bg-tertiary/30 p-2.5 hover:border-cyber-border-DEFAULT transition-colors">
-              <Checkbox
+              <OptionRow
                 checked={config.enable_sub_comments}
-                onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked === true })}
+                onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked })}
                 disabled={isDisabled || !config.enable_comments}
+                title={t('field.subComments')}
               />
-              <p className="text-xs font-mono text-cyber-text-primary">{t('field.subComments')}</p>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-lg border border-cyber-border-subtle bg-cyber-bg-tertiary/30 p-2.5 hover:border-cyber-border-DEFAULT transition-colors">
-              <Checkbox
+              <OptionRow
                 checked={config.enable_media}
-                onCheckedChange={(checked) => updateConfig({ enable_media: checked === true })}
+                onCheckedChange={(checked) => updateConfig({ enable_media: checked })}
                 disabled={isDisabled}
+                title={t('field.downloadMedia')}
+                hint={t('field.downloadMediaHint')}
               />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="h-3.5 w-3.5 text-cyber-text-secondary" />
-                  <p className="text-xs font-mono text-cyber-text-primary">{t('field.downloadMedia')}</p>
-                </div>
-                <p className="text-[10px] text-cyber-text-muted leading-snug">
-                  {t('field.downloadMediaHint')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-lg border border-cyber-border-subtle bg-cyber-bg-tertiary/30 p-2.5 hover:border-cyber-border-DEFAULT transition-colors">
-              <Checkbox
+              <OptionRow
                 checked={config.headless}
-                onCheckedChange={(checked) => updateConfig({ headless: checked === true })}
+                onCheckedChange={(checked) => updateConfig({ headless: checked })}
                 disabled={isDisabled}
+                title={t('field.headlessMode')}
+                hint={t('field.headlessModeHint')}
               />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-mono text-cyber-text-primary">{t('field.headlessMode')}</p>
-                <p className="text-[10px] text-cyber-text-muted leading-snug">
-                  {t('field.headlessModeHint')}
-                </p>
-              </div>
             </div>
-          </div>
-        </Section>
+          </Section>
+        </div>
       </div>
 
-      {/* Row 2: Start/Stop Button - Full Width */}
-      <div className="w-full">
+      <div className="shrink-0 border-t border-cyber-border-subtle bg-cyber-bg-panel px-6 py-4">
         {isRunning ? (
           <Button
-            onClick={handleStop}
+            onClick={() => stopCrawler()}
             disabled={isBusy}
-            className="w-full h-12 bg-cyber-neon-pink text-white font-mono font-bold text-sm tracking-wider hover:bg-cyber-neon-pink/90 hover:shadow-glow-pink-sm transition-all"
+            variant="destructive"
+            className="h-11 w-full text-sm tracking-wide"
           >
-            <Square className="w-4 h-4" />
+            <Square className="h-4 w-4" />
             {isStopping ? t('button.stopping') : t('button.terminate')}
           </Button>
         ) : (
           <Button
-            onClick={handleStart}
+            onClick={() => startCrawler(config)}
             disabled={isBusy}
-            className="w-full h-12 bg-cyber-neon-cyan text-cyber-bg-primary font-mono font-bold text-sm tracking-wider hover:bg-cyber-neon-cyan/90 hover:shadow-glow-cyan-sm transition-all"
+            className="h-11 w-full text-sm tracking-wide"
           >
-            <Play className="w-4 h-4" />
+            <Play className="h-4 w-4" />
             {isStarting ? t('button.initiating') : t('button.initiateScan')}
           </Button>
         )}

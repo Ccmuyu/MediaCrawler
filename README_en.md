@@ -169,8 +169,8 @@ uv run uvicorn api.main:app --port 8080 --reload
 
 # Terminal 2: start frontend dev server
 cd webui
-npm install
-npm run dev        # starts on port 5173 by default and proxies /api to 8080
+pnpm install
+pnpm dev           # starts on port 5173 by default and proxies /api to 8080
 ```
 
 After successful startup, visit `http://localhost:5173/` to open the WebUI interface.
@@ -183,8 +183,8 @@ If you want the API server to serve the WebUI static assets directly, build the 
 
 ```shell
 cd webui
-npm install
-npm run build      # outputs to api/webui/
+pnpm install
+pnpm build         # outputs to api/webui/
 ```
 
 Then start only the API server:

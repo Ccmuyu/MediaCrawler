@@ -1,16 +1,16 @@
 {
   "header": {
-    "title": "系统控制台",
-    "entries": "{{count}} 条记录",
-    "active": "活跃",
+    "title": "运行记录",
+    "entries": "{{count}} 条",
+    "active": "进行中",
     "clear": "清除",
     "restore": "恢复所有日志"
   },
   "banner": {
-    "systemInit": "[系统] 系统初始化成功",
-    "configHint": "[信息] 配置参数并启动扫描序列..."
+    "systemInit": "控制台已就绪",
+    "configHint": "在左侧完成配置，然后开始采集。"
   },
   "footer": {
-    "awaiting": "等待命令..."
+    "awaiting": "等待开始"
   }
 }

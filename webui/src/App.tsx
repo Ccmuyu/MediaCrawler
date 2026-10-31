@@ -8,11 +8,8 @@ import { EnvironmentCheck, isEnvChecked } from '@/components/env/EnvironmentChec
 import { LicenseDisclaimer, isLicenseAccepted } from '@/components/license/LicenseDisclaimer'
 
 function App() {
-  // Initialize by checking localStorage if license has been accepted
   const [licenseAccepted, setLicenseAccepted] = useState(() => isLicenseAccepted())
-  // Initialize by checking localStorage if env check has passed
   const [envChecked, setEnvChecked] = useState(() => isEnvChecked())
-  // State for showing disclaimer manually
   const [showDisclaimer, setShowDisclaimer] = useState(false)
 
   const handleEnvCheckComplete = () => {
@@ -29,42 +26,32 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen cyber-grid overflow-hidden relative">
-      {/* License Disclaimer Modal - Shows first or when triggered */}
+    <div className="cyber-grid flex h-screen flex-col overflow-hidden">
       {(!licenseAccepted || showDisclaimer) && (
         <LicenseDisclaimer onAccept={handleLicenseAccept} />
       )}
 
-      {/* Environment Check Modal - Shows after license accepted */}
       {licenseAccepted && !showDisclaimer && !envChecked && (
         <EnvironmentCheck onCheckComplete={handleEnvCheckComplete} />
       )}
 
-      {/* Header Bar */}
       <Sidebar onShowDisclaimer={handleShowDisclaimer} />
 
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden min-h-0">
-        {/* Config Panel - Primary Action Area (Always Expanded) */}
-        <div className="flex-shrink-0">
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(280px,1.05fr)_minmax(220px,0.95fr)] lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:grid-rows-1">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden border-b border-cyber-border-subtle bg-cyber-bg-panel lg:border-b-0 lg:border-r">
           <CrawlerConfigPanel />
         </div>
-
-        {/* Console - Collapsible Terminal */}
-        <MainContent />
+        <div className="flex min-h-0 flex-col p-3 sm:p-4 lg:p-5">
+          <MainContent />
+        </div>
       </div>
 
-      {/* Author Footer */}
       <AuthorFooter />
 
-      {/* Toast notifications - Theme-aware style */}
       <Toaster
         position="top-right"
         toastOptions={{
-          className: 'glass-panel font-mono text-cyber-text-primary',
-          style: {
-            fontFamily: 'JetBrains Mono, monospace',
-          },
+          className: 'border border-cyber-border-subtle bg-cyber-bg-panel text-cyber-text-primary shadow-cyber-float',
         }}
       />
     </div>

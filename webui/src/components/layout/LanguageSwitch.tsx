@@ -1,4 +1,3 @@
-import { Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   Select,
@@ -20,13 +19,12 @@ export function LanguageSwitch() {
 
   return (
     <Select value={i18n.language} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-      <SelectTrigger className="w-20 h-7 text-xs font-mono border-cyber-border-subtle bg-cyber-bg-tertiary/50 hover:border-cyber-neon-cyan/50 transition-colors">
-        <Globe className="w-3 h-3 mr-1 text-cyber-text-secondary" />
+      <SelectTrigger className="h-8 w-[76px] rounded-full border-transparent bg-transparent px-2.5 text-xs text-cyber-text-secondary hover:bg-cyber-bg-tertiary">
         <SelectValue>{currentLang.label}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {languages.map((lang) => (
-          <SelectItem key={lang.code} value={lang.code} className="text-xs font-mono">
+          <SelectItem key={lang.code} value={lang.code} className="text-sm">
             {lang.label}
           </SelectItem>
         ))}

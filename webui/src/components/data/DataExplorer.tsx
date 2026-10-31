@@ -77,10 +77,10 @@ export function DataExplorer() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-mono font-bold text-cyber-neon-cyan glow-text-cyan tracking-wider">
+          <h2 className="font-serif text-xl text-cyber-text-primary">
             {t('explorer.title')}
           </h2>
-          <Badge variant="default" className="font-mono">
+          <Badge variant="default">
             {t('explorer.records', { count: files.length })}
           </Badge>
         </div>
@@ -89,7 +89,6 @@ export function DataExplorer() {
           size="sm"
           onClick={() => refetch()}
           disabled={isRefetching}
-          className="font-mono"
         >
           <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
           {t('explorer.rescan')}
@@ -101,10 +100,10 @@ export function DataExplorer() {
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all ${
+            className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
               activeTab === 'all'
-                ? 'bg-cyber-neon-cyan text-black font-bold'
-                : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary border border-cyber-border-subtle hover:border-cyber-neon-cyan/50'
+                ? 'bg-cyber-neon-cyan text-cyber-bg-primary'
+                : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary'
             }`}
           >
             {t('explorer.allCategories')} ({files.length})
@@ -113,10 +112,10 @@ export function DataExplorer() {
             <button
               key={category}
               onClick={() => setActiveTab(category)}
-              className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all ${
+              className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
                 activeTab === category
-                  ? 'bg-cyber-neon-cyan text-black font-bold'
-                  : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary border border-cyber-border-subtle hover:border-cyber-neon-cyan/50'
+                  ? 'bg-cyber-neon-cyan text-cyber-bg-primary'
+                  : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary'
               }`}
             >
               {getCategoryLabel(category)} ({groupedFiles[category].length})
@@ -128,20 +127,17 @@ export function DataExplorer() {
       {/* Content */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-cyber-text-muted font-mono animate-pulse">
+          <div className="text-sm text-cyber-text-muted">
             {t('explorer.loading')}
           </div>
         </div>
       ) : files.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="relative">
-            <FolderOpen className="w-16 h-16 text-cyber-neon-cyan/30 mb-4" />
-            <div className="absolute inset-0 blur-xl bg-cyber-neon-cyan/10" />
-          </div>
-          <h3 className="text-lg font-mono font-medium text-cyber-neon-cyan mb-2">
+          <FolderOpen className="mb-4 h-8 w-8 text-cyber-text-muted" />
+          <h3 className="mb-2 font-serif text-lg text-cyber-text-primary">
             {t('explorer.noData')}
           </h3>
-          <p className="text-sm text-cyber-text-muted max-w-md font-mono">
+          <p className="max-w-md text-sm text-cyber-text-muted">
             {t('explorer.noDataHint')}
           </p>
         </div>

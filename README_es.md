@@ -169,8 +169,8 @@ uv run uvicorn api.main:app --port 8080 --reload
 
 # Terminal 2: iniciar servidor de desarrollo frontend
 cd webui
-npm install
-npm run dev        # se inicia en el puerto 5173 por defecto y redirige /api a 8080
+pnpm install
+pnpm dev           # se inicia en el puerto 5173 por defecto y redirige /api a 8080
 ```
 
 Después de iniciar exitosamente, visite `http://localhost:5173/` para abrir la interfaz WebUI.
@@ -183,8 +183,8 @@ Si desea que el servidor API sirva directamente los recursos estáticos de WebUI
 
 ```shell
 cd webui
-npm install
-npm run build      # salida en api/webui/
+pnpm install
+pnpm build         # salida en api/webui/
 ```
 
 Luego inicie solo el servidor API:

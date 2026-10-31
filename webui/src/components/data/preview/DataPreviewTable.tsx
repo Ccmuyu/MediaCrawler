@@ -63,7 +63,7 @@ export function DataPreviewTable({ data, columns: propColumns }: DataPreviewTabl
                 {columns.map((col) => (
                   <th
                     key={col}
-                    className="px-3 py-2 text-left text-cyber-neon-cyan whitespace-nowrap"
+                    className="whitespace-nowrap px-3 py-2 text-left font-medium text-cyber-text-secondary"
                   >
                     {col}
                   </th>

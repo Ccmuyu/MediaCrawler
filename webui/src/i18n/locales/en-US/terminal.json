@@ -1,16 +1,16 @@
 {
   "header": {
-    "title": "SYSTEM_CONSOLE",
+    "title": "Activity",
     "entries": "{{count}} entries",
-    "active": "ACTIVE",
-    "clear": "CLEAR",
-    "restore": "RESTORE ALL LOGS"
+    "active": "Running",
+    "clear": "Clear",
+    "restore": "Restore logs"
   },
   "banner": {
-    "systemInit": "[SYS] System initialized successfully",
-    "configHint": "[INFO] Configure parameters and initiate scan sequence..."
+    "systemInit": "Console is ready",
+    "configHint": "Set up the task on the left, then start."
   },
   "footer": {
-    "awaiting": "awaiting_command..."
+    "awaiting": "Waiting"
   }
 }

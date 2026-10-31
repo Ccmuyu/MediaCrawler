@@ -20,26 +20,22 @@ const fileIcons: Record<string, typeof FileJson> = {
   xls: FileSpreadsheet,
 }
 
-const fileStyles: Record<string, { icon: string; border: string; badge: string }> = {
+const fileStyles: Record<string, { icon: string; badge: string }> = {
   json: {
     icon: 'text-cyber-neon-yellow',
-    border: 'hover:border-cyber-neon-yellow/50',
-    badge: 'border-cyber-neon-yellow/30 bg-cyber-neon-yellow/10 text-cyber-neon-yellow'
+    badge: 'border-transparent bg-cyber-neon-yellow/10 text-cyber-neon-yellow'
   },
   csv: {
     icon: 'text-cyber-neon-green',
-    border: 'hover:border-cyber-neon-green/50',
-    badge: 'border-cyber-neon-green/30 bg-cyber-neon-green/10 text-cyber-neon-green'
+    badge: 'border-transparent bg-cyber-neon-green/10 text-cyber-neon-green'
   },
   xlsx: {
-    icon: 'text-cyber-neon-cyan',
-    border: 'hover:border-cyber-neon-cyan/50',
-    badge: 'border-cyber-neon-cyan/30 bg-cyber-neon-cyan/10 text-cyber-neon-cyan'
+    icon: 'text-cyber-text-secondary',
+    badge: 'border-transparent bg-cyber-bg-tertiary text-cyber-text-secondary'
   },
   xls: {
-    icon: 'text-cyber-neon-cyan',
-    border: 'hover:border-cyber-neon-cyan/50',
-    badge: 'border-cyber-neon-cyan/30 bg-cyber-neon-cyan/10 text-cyber-neon-cyan'
+    icon: 'text-cyber-text-secondary',
+    badge: 'border-transparent bg-cyber-bg-tertiary text-cyber-text-secondary'
   },
 }
 
@@ -50,8 +46,7 @@ export function FileCard({ file }: FileCardProps) {
   const Icon = fileIcons[file.type] || FileText
   const styles = fileStyles[file.type] || {
     icon: 'text-cyber-text-muted',
-    border: 'hover:border-cyber-neon-cyan/50',
-    badge: 'border-cyber-border-DEFAULT bg-cyber-bg-tertiary text-cyber-text-secondary'
+    badge: 'border-transparent bg-cyber-bg-tertiary text-cyber-text-secondary'
   }
 
   // 检查是否支持预览
@@ -64,54 +59,49 @@ export function FileCard({ file }: FileCardProps) {
 
   return (
     <>
-      <Card className={`relative overflow-hidden card-scan group transition-all ${styles.border} hover:shadow-[0_0_15px_rgb(var(--cyber-neon-cyan)/0.15)]`}>
-        {/* Scan effect overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyber-neon-cyan/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-
-        <CardContent className="p-4 relative">
+      <Card className="group">
+        <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className={`p-2 rounded bg-cyber-bg-panel border border-cyber-border-DEFAULT ${styles.icon}`}>
-              <Icon className="w-6 h-6" />
+            <div className={`rounded-lg bg-cyber-bg-primary p-2 ${styles.icon}`}>
+              <Icon className="h-5 w-5" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-mono font-medium text-sm text-cyber-text-primary truncate" title={file.name}>
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-sm text-cyber-text-primary" title={file.name}>
                 {file.name}
               </h3>
-              <p className="text-xs text-cyber-text-muted mt-1 font-mono">
+              <p className="mt-1 text-xs text-cyber-text-muted">
                 {formatFileSize(file.size)}
                 {file.record_count !== null && (
-                  <span className="text-cyber-neon-green"> | {t('file.entries', { count: file.record_count })}</span>
+                  <span> · {t('file.entries', { count: file.record_count })}</span>
                 )}
               </p>
-              <p className="text-xs text-cyber-text-muted mt-1 font-mono">
+              <p className="mt-1 text-xs text-cyber-text-muted">
                 {formatDateTime(file.modified_at)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-cyber-border-subtle">
-            <Badge variant="outline" className={`text-[10px] font-mono ${styles.badge}`}>
-              .{file.type.toUpperCase()}
+          <div className="mt-3 flex items-center justify-between border-t border-cyber-border-subtle pt-3">
+            <Badge variant="outline" className={styles.badge}>
+              {file.type.toUpperCase()}
             </Badge>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1">
               {isPreviewable && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 font-mono text-cyber-neon-cyan hover:text-cyber-neon-cyan hover:bg-cyber-neon-cyan/10"
                   onClick={() => setPreviewOpen(true)}
                 >
-                  <Eye className="w-3 h-3 mr-1" />
+                  <Eye className="h-3 w-3" />
                   {t('file.preview')}
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 font-mono text-cyber-neon-cyan hover:text-cyber-neon-cyan hover:bg-cyber-neon-cyan/10"
                 onClick={handleDownload}
               >
-                <Download className="w-3 h-3 mr-1" />
+                <Download className="h-3 w-3" />
                 {t('file.extract')}
               </Button>
             </div>

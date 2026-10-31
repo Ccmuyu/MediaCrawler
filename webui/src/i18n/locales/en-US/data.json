@@ -1,29 +1,29 @@
 {
   "dialog": {
-    "button": "PAYLOAD_MATRIX",
-    "title": "DATA_EXPLORER"
+    "button": "Data",
+    "title": "Saved files"
   },
   "explorer": {
-    "title": "CAPTURED_PAYLOAD_MATRIX",
-    "records": "{{count}} RECORDS",
-    "rescan": "RESCAN",
-    "loading": "[LOADING] Scanning payload directory...",
-    "noData": "NO_DATA_CAPTURED",
-    "noDataHint": "Initialize crawler to begin data extraction sequence. Results will appear here upon completion.",
-    "allCategories": "ALL"
+    "title": "Files",
+    "records": "{{count}}",
+    "rescan": "Refresh",
+    "loading": "Reading the data folder",
+    "noData": "No files yet",
+    "noDataHint": "Start a crawl and the results will show up here.",
+    "allCategories": "All"
   },
   "file": {
     "entries": "{{count}} entries",
-    "extract": "EXTRACT",
-    "preview": "PREVIEW"
+    "extract": "Download",
+    "preview": "Preview"
   },
   "preview": {
-    "title": "Data Preview",
-    "records": "{{count}} RECORDS",
-    "download": "DOWNLOAD",
-    "loading": "[LOADING] Decoding payload...",
-    "error": "[ERROR] Failed to decode payload",
-    "searchPlaceholder": "Search in data...",
-    "showing": "Showing {{filtered}} of {{total}} records"
+    "title": "Preview",
+    "records": "{{count}} records",
+    "download": "Download",
+    "loading": "Reading the file",
+    "error": "Could not read this file",
+    "searchPlaceholder": "Search",
+    "showing": "Showing {{filtered}} of {{total}}"
   }
 }

@@ -76,7 +76,7 @@ async def serve_frontend():
         "message": "MediaCrawler WebUI API",
         "version": "1.0.0",
         "docs": "/docs",
-        "note": "WebUI not found, please build it first: cd webui && npm run build"
+        "note": "WebUI not found, please build it first: cd webui && pnpm build"
     }
 
 

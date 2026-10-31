@@ -16,133 +16,101 @@ export function Terminal() {
   const status = useCrawlerStore((state) => state.status)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto scroll to bottom
   useEffect(() => {
     if (scrollRef.current && !isCollapsed) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [logs, isCollapsed])
 
+  const statusLabel =
+    status === 'running'
+      ? t('header.active')
+      : status === 'idle'
+        ? t('footer.awaiting')
+        : status
+
   return (
-    <div className={`flex flex-col rounded-lg overflow-hidden transition-all duration-300 border border-cyber-border-subtle bg-[#0d1117] ${isCollapsed ? 'h-12' : 'h-full'}`}>
-      {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] border-b border-[#30363d] flex-shrink-0">
+    <div className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#2A2724] bg-[#171512] shadow-cyber-float transition-all duration-300 ${isCollapsed ? 'h-12 shrink-0' : 'h-full flex-1'}`}>
+      <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#201E1B] px-4 py-3">
         <div className="flex items-center gap-3">
-          {/* Window buttons */}
-          <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-neon-pink/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-neon-orange/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-neon-green/80" />
-          </div>
-          <span className="text-xs text-[#8b949e] font-mono tracking-wider">
-            {t('header.title')}
-          </span>
+          <span className="font-serif text-base text-[#E7E1D6]">{t('header.title')}</span>
+          <span className="text-xs text-[#8C857A]">{t('header.entries', { count: logs.length })}</span>
+          {status === 'running' && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-[#8FBF9F]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#8FBF9F]" />
+              {t('header.active')}
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Log count & status */}
-          <div className="flex items-center gap-3 text-xs font-mono">
-            <span className="text-[#8b949e]">{t('header.entries', { count: logs.length })}</span>
-            {status === 'running' && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-cyber-neon-green rounded-full shadow-glow-green-sm animate-pulse-fast" />
-                <span className="text-cyber-neon-green">{t('header.active')}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Data Explorer */}
+        <div className="flex items-center gap-1">
           <DataExplorerDialog />
 
-          {/* Restore logs - 只在有清除标记时显示 */}
           {clearedAfterLogId !== null && (
             <Button
               variant="ghost"
               size="sm"
               onClick={restoreLogs}
-              className="h-7 px-2 text-[#8b949e] hover:text-[#00ffff] hover:bg-[#00ffff]/10"
+              className="h-8 w-8 px-0 text-[#A39B90] hover:bg-white/5 hover:text-[#E7E1D6]"
               title={t('header.restore')}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="h-4 w-4" />
             </Button>
           )}
 
-          {/* Clear logs */}
           <Button
             variant="ghost"
             size="sm"
             onClick={clearLogs}
             disabled={logs.length === 0}
-            className="h-7 px-2 text-[#8b949e] hover:text-[#ff0080] hover:bg-[#ff0080]/10 disabled:opacity-30"
+            className="h-8 w-8 px-0 text-[#A39B90] hover:bg-white/5 hover:text-[#E7E1D6] disabled:opacity-30"
             title={t('header.clear')}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="h-4 w-4" />
           </Button>
 
-          {/* Collapse toggle */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-7 px-2 text-[#8b949e] hover:text-[#00ffff] hover:bg-[#00ffff]/10"
+            className="h-8 w-8 px-0 text-[#A39B90] hover:bg-white/5 hover:text-[#E7E1D6]"
           >
-            {isCollapsed ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronUp className="w-4 h-4" />
-            )}
+            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
-      {/* Terminal Content - only show when not collapsed */}
       {!isCollapsed && (
         <>
           <div
             ref={scrollRef}
-            className="flex-1 overflow-auto p-4 font-mono text-sm terminal-scroll bg-[#0d1117] min-h-0"
+            className="terminal-scroll min-h-0 flex-1 overflow-auto bg-[#171512] p-5 font-mono text-[13px]"
           >
-            {/* ASCII Art Banner when empty */}
             {logs.length === 0 ? (
-              <div className="space-y-4">
-                <pre className="text-cyber-neon-cyan/70 text-xs leading-tight">
-{`  ╔══════════════════════════════════════════════════════╗
-  ║   __  __          _ _       ____                     ║
-  ║  |  \\/  | ___  __| (_) __ _/ ___|_ __ __ ___      __ ║
-  ║  | |\\/| |/ _ \\/ _\` | |/ _\` | |   | '__/ _\` \\ \\ /\\ / / ║
-  ║  | |  | |  __/ (_| | | (_| | |___| | | (_| |\\ V  V /  ║
-  ║  |_|  |_|\\___|\\__,_|_|\\__,_|\\____|_|  \\__,_| \\_/\\_/   ║
-  ║                                                      ║
-  ║          [ NEURAL EXTRACTION UNIT v1.0 ]             ║
-  ╚══════════════════════════════════════════════════════╝`}
-                </pre>
-                <div className="text-[#c9d1d9] text-xs space-y-1">
-                  <p className="text-cyber-neon-green/70">{t('banner.systemInit')}</p>
-                  <p className="text-[#8b949e]">{t('banner.configHint')}</p>
+              <div className="flex h-full min-h-[140px] items-center">
+                <div>
+                  <p className="font-serif text-3xl text-[#E7E1D6]">{t('banner.systemInit')}</p>
+                  <p className="mt-3 max-w-sm text-sm leading-relaxed text-[#A39B90]">{t('banner.configHint')}</p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {logs.map((log) => (
                   <TerminalLine key={log.id} log={log} />
                 ))}
               </div>
             )}
 
-            {/* Active Cursor */}
             {status === 'running' && (
-              <div className="flex items-center gap-1 mt-3">
-                <span className="text-cyber-neon-green/80">root@crawler:~$</span>
-                <span className="w-2 h-4 bg-cyber-neon-green/80 cursor-blink" />
+              <div className="mt-3 flex items-center gap-2 text-[#8FBF9F]">
+                <span>›</span>
+                <span className="inline-block h-4 w-1.5 bg-[#8FBF9F] cursor-blink" />
               </div>
             )}
           </div>
 
-          {/* Terminal Footer */}
-          <div className="px-4 py-2 border-t border-[#30363d] bg-[#161b22] flex items-center justify-end flex-shrink-0">
-            <div className="text-xs font-mono text-[#8b949e]">
-              {status.toUpperCase()}
-            </div>
+          <div className="flex shrink-0 items-center justify-end border-t border-white/10 bg-[#201E1B] px-4 py-2">
+            <span className="text-[11px] tracking-[0.16em] text-[#8C857A]">{statusLabel}</span>
           </div>
         </>
       )}

@@ -3,26 +3,26 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-mono transition-colors focus:outline-none',
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none',
   {
     variants: {
       variant: {
         default:
-          'border-cyber-neon-cyan/30 bg-cyber-neon-cyan/10 text-cyber-neon-cyan',
+          'border-transparent bg-cyber-bg-tertiary text-cyber-text-primary',
         secondary:
           'border-cyber-border-DEFAULT bg-cyber-bg-tertiary text-cyber-text-secondary',
         destructive:
-          'border-cyber-neon-pink/30 bg-cyber-neon-pink/10 text-cyber-neon-pink',
+          'border-transparent bg-cyber-neon-pink/10 text-cyber-neon-pink',
         outline:
-          'border-cyber-border-DEFAULT text-cyber-text-primary',
+          'border-cyber-border-DEFAULT text-cyber-text-secondary',
         success:
-          'border-cyber-neon-green/30 bg-cyber-neon-green/10 text-cyber-neon-green shadow-glow-green-sm',
+          'border-transparent bg-cyber-neon-green/10 text-cyber-neon-green',
         warning:
-          'border-cyber-neon-orange/30 bg-cyber-neon-orange/10 text-cyber-neon-orange',
+          'border-transparent bg-cyber-neon-orange/10 text-cyber-neon-orange',
         idle:
-          'border-cyber-border-DEFAULT bg-cyber-bg-tertiary text-cyber-text-muted',
+          'border-cyber-border-DEFAULT bg-transparent text-cyber-text-muted',
         running:
-          'border-cyber-neon-green/50 bg-cyber-neon-green/20 text-cyber-neon-green shadow-glow-green-sm animate-pulse-fast',
+          'border-transparent bg-cyber-neon-green/10 text-cyber-neon-green',
       },
     },
     defaultVariants: {

@@ -109,74 +109,117 @@
 
 ## 🚀 快速开始
 
-> 💡 **如果这个项目对您有帮助，请给个 ⭐ Star 支持一下！**
+日常操作用 WebUI，脚本和调试用命令行。两种方式都要先完成安装。Python 需要 **3.11 及以上**。
 
-## 📋 前置依赖
+### 1. 安装
 
-### 🚀 uv 安装（推荐）
+**uv**（管理 Python 依赖）：按 [uv 安装指南](https://docs.astral.sh/uv/getting-started/installation) 安装，然后执行 `uv --version` 确认有版本号。
 
-在进行下一步操作之前，请确保电脑上已经安装了 uv：
+**Node.js 18 及以上**：[nodejs.org](https://nodejs.org/en/download/)。抖音、知乎的签名脚本和 WebUI 都需要它。
 
-- **安装地址**：[uv 官方安装指南](https://docs.astral.sh/uv/getting-started/installation)
-- **验证安装**：终端输入命令 `uv --version`，如果正常显示版本号，证明已经安装成功
-- **推荐理由**：uv 是目前最强的 Python 包管理工具，速度快、依赖解析准确
+**pnpm 10 及以上**（只在使用 WebUI 时需要）：见 [pnpm 安装](https://pnpm.io/installation)。项目当前使用 pnpm 11，与 `webui/package.json` 里的 `packageManager` 一致。执行 `pnpm --version` 确认。
 
-### 🟢 Node.js 安装
-
-项目依赖 Node.js，请前往官网下载安装：
-
-- **下载地址**：https://nodejs.org/en/download/
-- **版本要求**：>= 16.0.0
-
-### 📦 Python 包安装
+安装 Python 依赖：
 
 ```shell
-# 进入项目目录
 cd MediaCrawler
-
-# 使用 uv sync 命令来保证 python 版本和相关依赖包的一致性
 uv sync
 ```
 
-### 🌐 浏览器驱动安装（可选）
+**Chrome（推荐）**。默认用 CDP 连接本机 Chrome，复用已有登录状态。需要 Chrome 144 及以上。
 
-> 如果使用默认的 CDP 模式（连接已有 Chrome 浏览器），**无需安装浏览器驱动**。仅在使用标准 Playwright 模式时需要安装。
+1. 地址栏打开 `chrome://inspect/#remote-debugging`
+2. 勾选 **Allow remote debugging for this browser instance**
+3. 页面出现 `Server running at: 127.0.0.1:9222` 即就绪
+
+爬虫启动后 Chrome 会弹出确认框，60 秒内点「接受」。不想用 CDP 时，把 `config/base_config.py` 里的 `ENABLE_CDP_MODE` 设为 `False`，并安装浏览器驱动：
 
 ```shell
-# 仅在标准 Playwright 模式下需要安装浏览器驱动
 uv run playwright install
 ```
 
-### 🌍 Chrome 浏览器配置（推荐）
+### 2. 启动 WebUI
 
-项目默认使用 CDP 模式连接用户已有的 Chrome 浏览器，可以复用浏览器已有的登录状态、Cookie、扩展等，**大幅降低平台风控检测风险**。
+WebUI 是两个进程：API 在 **8080**，页面在 **5173**。只开页面时，Vite 会把 `/api` 代理到 8080，连不上就会弹出环境检测失败（`Cannot connect to API server`）。
 
-使用前需要：
+开两个终端。
 
-1. **安装最新版 Chrome 浏览器**（版本 >= 144），[下载地址](https://www.google.com/chrome/)
-2. **开启远程调试功能**：在 Chrome 地址栏输入 `chrome://inspect/#remote-debugging`，勾选 **"Allow remote debugging for this browser instance"**
-3. 页面显示 `Server running at: 127.0.0.1:9222` 表示已就绪
-
-> 💡 **提示**：运行爬虫后，Chrome 浏览器会弹出确认对话框，点击"接受"即可。程序会等待用户确认，60秒内操作完成即可。
->
-> 如果不想使用 CDP 模式，可以在 `config/base_config.py` 中设置 `ENABLE_CDP_MODE = False` 切换为标准 Playwright 模式。
-
-## 🚀 运行爬虫程序
+终端 1 在项目根目录启动 API。看到 `Uvicorn running on http://127.0.0.1:8080` 再开下一个终端：
 
 ```shell
-# 在 config/base_config.py 查看配置项目功能，写的有中文注释
+uv run uvicorn api.main:app --port 8080 --reload
+```
 
-# 从配置文件中读取关键词搜索相关的帖子并爬取帖子信息与评论
+终端 2，启动页面：
+
+```shell
+cd webui
+pnpm install
+pnpm dev
+```
+
+浏览器打开 <http://localhost:5173>。
+
+第一次进入会先看免责声明，再做环境检测（请求 `/api/env/check`）。检测失败时先确认终端 1 还在跑，然后点 **RETRY_SCAN**。暂时跳过可以点 **SKIP_CHECK**，跳过只关掉弹窗，API 没启动的话后面的开始、日志仍然不可用。
+
+在页面上操作：
+
+1. 选择平台、登录方式和爬取类型。
+2. 搜索模式填写关键词；详情模式粘贴帖子链接或 ID；创作者模式粘贴主页链接或 ID。
+3. 按需打开评论、二级评论、媒体下载。保存格式默认跟随页面上的选项。
+4. 点开始。扫码登录时程序会打开浏览器，在浏览器里完成登录；Cookie 登录则把 Cookie 贴到页面上。日志在页面下方。
+5. 采集结果写在项目根目录的 `data/` 下。页面终端区域可以打开数据预览。
+
+<img src="docs/static/images/img_8.png" alt="WebUI 界面预览">
+
+只想开一个端口时，先构建前端，再只启动 API，然后访问 <http://localhost:8080>：
+
+```shell
+cd webui
+pnpm install
+pnpm build          # 产物输出到 api/webui/
+```
+
+```shell
+uv run uvicorn api.main:app --port 8080 --reload
+```
+
+页面上可以改平台、登录方式、爬取类型、关键词或链接、评论和媒体开关，并查看运行日志和已保存的数据。代理、并发、数据库初始化等仍在 `config/base_config.py` 和命令行参数里。
+
+### 3. 命令行启动
+
+配置项在 `config/base_config.py`，带中文注释。命令行传入的参数会覆盖配置文件。
+
+```shell
+# 查看全部参数
+uv run main.py --help
+
+# 按关键词搜索，并在浏览器里扫码登录
 uv run main.py --platform xhs --lt qrcode --type search
 
-# 从配置文件中读取指定的帖子ID列表获取指定帖子的信息与评论信息
-uv run main.py --platform xhs --lt qrcode --type detail
+# 抓取指定帖子。ID 写在命令里，或事先写进对应平台的配置
+uv run main.py --platform xhs --lt qrcode --type detail --specified_id <帖子URL或ID>
 
-# 打开对应APP扫二维码登录
-
-# 其他平台爬虫使用示例，执行下面的命令查看
-uv run main.py --help
+# 抓取创作者主页
+uv run main.py --platform dy --lt qrcode --type creator --creator_id <主页URL或ID>
 ```
+
+| 参数 | 作用 | 常用值 |
+| --- | --- | --- |
+| `--platform` | 平台 | `xhs` 小红书，`dy` 抖音，`ks` 快手，`bili` B 站，`wb` 微博，`tieba` 贴吧，`zhihu` 知乎 |
+| `--lt` | 登录方式 | `qrcode` 扫码，`phone` 手机号，`cookie` Cookie |
+| `--type` | 爬取类型 | `search` 关键词，`detail` 指定帖子，`creator` 创作者主页 |
+| `--keywords` | 搜索关键词 | 多个关键词用英文逗号分隔 |
+| `--specified_id` | 帖子 URL 或 ID | 详情模式，多个用英文逗号分隔 |
+| `--creator_id` | 创作者 URL 或 ID | 创作者模式，多个用英文逗号分隔 |
+| `--get_comment` | 是否抓一级评论 | `true` / `false` |
+| `--get_sub_comment` | 是否抓二级评论 | `true` / `false` |
+| `--get_media` | 是否下载封面、视频、图片 | `true` / `false` |
+| `--save_data_option` | 保存格式 | `jsonl`（默认）、`json`、`csv`、`excel`、`sqlite`、`db`、`mongodb`、`postgres` |
+| `--start` | 起始页码 | 默认 `1` |
+| `--headless` | 是否无头浏览器 | `true` / `false`，登录失败时保持 `false` |
+
+关键词默认读配置里的 `KEYWORDS`。文件默认落在 `data/<平台>/`。`SAVE_DATA_PATH` 不为空时改到该目录。数据库保存方式见 [数据存储指南](docs/data_storage_guide.md)。
 
 <details>
 <summary>📥 <strong>媒体下载（封面 / 视频 / 图文图片）</strong></summary>
@@ -213,64 +256,11 @@ data/xhs/media/{帖子ID}/
 </details>
 
 <details>
-<summary>🖥️ <strong>WebUI 可视化操作界面</strong></summary>
-
-MediaCrawler 提供了基于 Web 的可视化操作界面，无需命令行也能轻松使用爬虫功能。
-
-#### 开发调试（推荐）
-
-开发时需要同时启动后端 API 服务和前端 Vite 开发服务器：
-
-```shell
-# 终端 1：启动 API 服务器（默认端口 8080）
-uv run uvicorn api.main:app --port 8080 --reload
-
-# 终端 2：启动前端开发服务器
-cd webui
-npm install
-npm run dev        # 默认在 5173 端口启动，并代理 /api 到 8080
-```
-
-启动成功后，访问 `http://localhost:5173/` 即可打开 WebUI 界面。
-
-> 首次打开会进行环境检测（调用 `/api/env/check`），请确保后端服务已启动。如果检测失败，可点击「跳过检测」临时跳过。
-
-#### 构建生产资源
-
-如果希望通过 API 服务器直接提供 WebUI 静态资源，需要先构建前端：
-
-```shell
-cd webui
-npm install
-npm run build      # 产物输出到 api/webui/
-```
-
-构建完成后，只需启动 API 服务器：
-
-```shell
-uv run uvicorn api.main:app --port 8080 --reload
-```
-
-然后访问 `http://localhost:8080` 即可。
-
-#### WebUI 功能特性
-
-- 可视化配置爬虫参数（平台、登录方式、爬取类型等）
-- 实时查看爬虫运行状态和日志
-- 数据预览和导出
-
-#### 界面预览
-
-<img src="docs/static/images/img_8.png" alt="WebUI 界面预览">
-
-</details>
-
-<details>
 <summary>🔗 <strong>使用 Python 原生 venv 管理环境（不推荐）</strong></summary>
 
 #### 创建并激活 Python 虚拟环境
 
-> 如果是爬取抖音和知乎，需要提前安装 nodejs 环境，版本大于等于：`16` 即可
+> 如果是爬取抖音和知乎，需要提前安装 Node.js 18 及以上。
 
 ```shell
 # 进入项目根目录

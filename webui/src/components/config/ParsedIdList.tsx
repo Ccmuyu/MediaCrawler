@@ -31,7 +31,7 @@ export function ParsedIdList({ value, platform, type, onRemove, disabled }: Pars
 
   return (
     <div className="space-y-1.5 mt-2">
-      <div className="text-[10px] text-cyber-text-muted font-mono">
+      <div className="text-xs text-cyber-text-muted">
         已识别 {parsed.length} 个{type === 'detail' ? '帖子/视频' : '创作者'}:
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -66,10 +66,10 @@ function ParsedIdTag({ item, expectedType, onRemove }: ParsedIdTagProps) {
   return (
     <span
       className={`
-        inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-mono
+        inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs
         ${needsWarning
-          ? 'bg-cyber-neon-orange/10 border border-cyber-neon-orange/30 text-cyber-neon-orange'
-          : 'bg-cyber-neon-cyan/10 border border-cyber-neon-cyan/30 text-cyber-neon-cyan'
+          ? 'bg-cyber-neon-orange/10 text-cyber-neon-orange'
+          : 'bg-cyber-bg-tertiary text-cyber-text-primary'
         }
       `}
       title={item.original}
