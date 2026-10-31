@@ -1,79 +1,42 @@
 import { useTranslation } from 'react-i18next'
-import { Sparkles, Heart } from 'lucide-react'
+
+const links = [
+  { href: 'https://github.com/NanmiCoder', title: 'GitHub', src: '/logos/github.png' },
+  { href: 'https://space.bilibili.com/434377496', title: '哔哩哔哩', src: '/logos/bilibili_logo.png' },
+  { href: 'https://www.xiaohongshu.com/user/profile/5f58bd990000000001003753', title: '小红书', src: '/logos/xiaohongshu_logo.png' },
+  { href: 'https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE', title: '抖音', src: '/logos/douyin.png' },
+]
 
 export function AuthorFooter() {
   const { t } = useTranslation('license')
 
   return (
-    <footer className="h-24 flex-shrink-0 glass-panel border-t border-cyber-border-subtle">
-      <div className="h-full px-6 flex items-center justify-center gap-6">
-        {/* Author Avatar */}
-        <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-cyber-neon-cyan/60 flex-shrink-0 shadow-glow-cyan-sm">
-          <img
-            src="/logos/my_logo.png"
-            alt="程序员阿江-Relakkes"
-            className="w-full h-full object-cover"
-          />
+    <footer className="flex h-14 shrink-0 items-center justify-between gap-4 border-t border-cyber-border-subtle bg-cyber-bg-panel px-5 sm:px-6">
+      <div className="flex min-w-0 items-center gap-3">
+        <img
+          src="/logos/my_logo.png"
+          alt={t('author.name')}
+          className="h-8 w-8 shrink-0 rounded-full object-cover"
+        />
+        <div className="min-w-0">
+          <div className="truncate text-sm text-cyber-text-primary">{t('author.name')}</div>
+          <div className="hidden truncate text-xs text-cyber-text-muted sm:block">{t('author.slogan')}</div>
         </div>
+      </div>
 
-        {/* Author Info */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-cyber-text-primary">
-              {t('author.name')}
-            </span>
-            <Sparkles className="w-5 h-5 text-cyber-neon-cyan animate-pulse" />
-          </div>
-          <span className="text-sm text-cyber-text-muted hidden sm:inline">
-            {t('author.description')}
-          </span>
-          <div className="flex items-center gap-2 text-cyber-neon-cyan">
-            <Heart className="w-4 h-4 fill-current animate-pulse" />
-            <span className="text-sm font-medium">
-              {t('author.slogan')}
-            </span>
-          </div>
-        </div>
-
-        {/* Social Links */}
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
+        {links.map((link) => (
           <a
-            href="https://github.com/NanmiCoder"
+            key={link.title}
+            href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-11 h-11 rounded-lg flex items-center justify-center border border-cyber-border-subtle hover:border-cyber-neon-cyan hover:shadow-glow-cyan-sm transition-all bg-cyber-bg-tertiary hover:scale-110"
-            title="GitHub"
+            title={link.title}
+            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-cyber-bg-tertiary"
           >
-            <img src="/logos/github.png" alt="GitHub" className="w-6 h-6 object-contain" />
+            <img src={link.src} alt={link.title} className="h-4 w-4 object-contain" />
           </a>
-          <a
-            href="https://space.bilibili.com/434377496"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-11 h-11 rounded-lg flex items-center justify-center border border-cyber-border-subtle hover:border-pink-400 hover:shadow-[0_0_10px_rgba(251,113,133,0.4)] transition-all bg-cyber-bg-tertiary hover:scale-110"
-            title="哔哩哔哩"
-          >
-            <img src="/logos/bilibili_logo.png" alt="Bilibili" className="w-6 h-6 object-contain" />
-          </a>
-          <a
-            href="https://www.xiaohongshu.com/user/profile/5f58bd990000000001003753"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-11 h-11 rounded-lg flex items-center justify-center border border-cyber-border-subtle hover:border-red-400 hover:shadow-[0_0_10px_rgba(248,113,113,0.4)] transition-all bg-cyber-bg-tertiary hover:scale-110"
-            title="小红书"
-          >
-            <img src="/logos/xiaohongshu_logo.png" alt="小红书" className="w-6 h-6 object-contain" />
-          </a>
-          <a
-            href="https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-11 h-11 rounded-lg flex items-center justify-center border border-cyber-border-subtle hover:border-cyber-text-primary hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] transition-all bg-cyber-bg-tertiary hover:scale-110"
-            title="抖音"
-          >
-            <img src="/logos/douyin.png" alt="抖音" className="w-6 h-6 object-contain" />
-          </a>
-        </div>
+        ))}
       </div>
     </footer>
   )

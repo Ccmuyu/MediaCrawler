@@ -42,14 +42,14 @@ export function DataPreviewDialog({ file, open, onOpenChange }: DataPreviewDialo
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <DialogTitle className="font-mono text-cyber-neon-cyan">
+              <DialogTitle className="truncate">
                 {file.name}
               </DialogTitle>
-              <Badge variant="outline" className="font-mono text-[10px]">
+              <Badge variant="outline">
                 .{file.type.toUpperCase()}
               </Badge>
               {data && (
-                <Badge variant="default" className="font-mono text-[10px]">
+                <Badge variant="default">
                   {t('preview.records', { count: data.total })}
                 </Badge>
               )}
@@ -58,7 +58,7 @@ export function DataPreviewDialog({ file, open, onOpenChange }: DataPreviewDialo
               variant="outline"
               size="sm"
               onClick={handleDownload}
-              className="font-mono text-xs"
+              className="text-xs"
             >
               <Download className="w-3 h-3 mr-1" />
               {t('preview.download')}
@@ -70,13 +70,13 @@ export function DataPreviewDialog({ file, open, onOpenChange }: DataPreviewDialo
         <div className="flex-1 overflow-hidden min-h-0 mt-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-cyber-text-muted font-mono animate-pulse">
+              <div className="text-sm text-cyber-text-muted">
                 {t('preview.loading')}
               </div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-cyber-neon-pink font-mono">
+              <div className="text-sm text-cyber-neon-pink">
                 {t('preview.error')}
               </div>
             </div>

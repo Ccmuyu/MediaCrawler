@@ -1,11 +1,11 @@
 {
   "status": {
-    "active": "ACTIVE",
-    "standby": "STANDBY",
-    "idle": "IDLE",
-    "running": "RUNNING",
-    "stopping": "STOPPING",
-    "error": "ERROR"
+    "active": "Running",
+    "standby": "Standby",
+    "idle": "Idle",
+    "running": "Running",
+    "stopping": "Stopping",
+    "error": "Error"
   },
   "sidebar": {
     "title": "MediaCrawler",

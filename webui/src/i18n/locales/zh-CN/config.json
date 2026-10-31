@@ -17,6 +17,10 @@
       "description": "运行时参数"
     }
   },
+  "panel": {
+    "eyebrow": "采集",
+    "title": "任务配置"
+  },
   "field": {
     "platform": "平台",
     "platformPlaceholder": "选择平台",
@@ -61,10 +65,10 @@
     "headlessModeHint": "无 GUI 运行浏览器"
   },
   "button": {
-    "initiateScan": "开始爬虫",
-    "initiating": "启动中...",
-    "terminate": "终止",
-    "stopping": "停止中..."
+    "initiateScan": "开始采集",
+    "initiating": "正在启动",
+    "terminate": "停止采集",
+    "stopping": "正在停止"
   },
   "warning": {
     "cookieSlider": "[提示] 小红书和抖音平台不建议使用 Cookie 登录，因为可能会触发滑块验证",

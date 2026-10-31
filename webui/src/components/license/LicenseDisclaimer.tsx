@@ -49,92 +49,52 @@ export function LicenseDisclaimer({ onAccept }: LicenseDisclaimerProps) {
           align-items: center;
           justify-content: center;
           height: 100vh;
-          background: #0d1117;
-          color: #f85149;
-          font-family: 'JetBrains Mono', monospace;
+          background: #F3F0EA;
+          color: #1C1917;
+          font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
           text-align: center;
           padding: 20px;
         ">
-          <div style="font-size: 48px; margin-bottom: 20px;">⛔</div>
-          <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">访问已拒绝</div>
-          <div style="font-size: 14px; color: #8b949e;">您未同意使用条款，请关闭此标签页</div>
+          <div style="font-size: 28px; font-weight: 500; margin-bottom: 12px; font-family: 'Noto Serif SC', serif;">访问已拒绝</div>
+          <div style="font-size: 14px; color: #8A8378;">您未同意使用条款，请关闭此标签页</div>
         </div>
       `
     }, 200)
   }
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[100] overflow-y-auto py-8">
-      <div className="bg-cyber-bg-panel border-2 border-cyber-neon-pink rounded-lg shadow-cyber-card p-6 max-w-2xl w-full mx-4 relative">
-        {/* Corner decorations - Pink/Red theme for seriousness */}
-        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-cyber-neon-pink" />
-        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-cyber-neon-pink" />
-        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-cyber-neon-pink" />
-        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-cyber-neon-pink" />
-
-        {/* Header with warning icon */}
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <ShieldAlert className="w-8 h-8 text-cyber-neon-pink animate-pulse" />
-          <h2 className="text-xl font-mono font-bold text-cyber-neon-pink">
-            {t('title')}
-          </h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#1C1917]/45 px-4 py-8 backdrop-blur-[2px]">
+      <div className="relative w-full max-w-xl rounded-2xl border border-cyber-border-subtle bg-cyber-bg-panel p-8 shadow-cyber-elevated">
+        <div className="mb-6 flex items-start gap-3">
+          <ShieldAlert className="mt-1 h-5 w-5 shrink-0 text-cyber-neon-orange" />
+          <div>
+            <h2 className="font-serif text-2xl text-cyber-text-primary">{t('title')}</h2>
+            <p className="mt-2 text-sm text-cyber-text-secondary">{t('warning')}</p>
+          </div>
         </div>
 
-        {/* Warning subtitle */}
-        <div className="text-center mb-4">
-          <span className="text-base font-mono text-cyber-neon-orange">
-            {t('warning')}
-          </span>
-        </div>
+        <ol className="mb-6 space-y-3 text-sm leading-relaxed text-cyber-text-primary">
+          <li className="flex gap-3"><span className="font-serif text-cyber-text-muted">01</span><span>{t('content.line1')}</span></li>
+          <li className="flex gap-3"><span className="font-serif text-cyber-text-muted">02</span><span>{t('content.line2')}</span></li>
+          <li className="flex gap-3"><span className="font-serif text-cyber-text-muted">03</span><span>{t('content.line3')}</span></li>
+          <li className="flex gap-3"><span className="font-serif text-cyber-text-muted">04</span><span>{t('content.line4')}</span></li>
+        </ol>
 
-        {/* Content box */}
-        <div className="bg-black/50 border border-cyber-neon-pink/30 rounded-lg p-4 mb-4">
-          <ul className="space-y-2 text-sm font-mono">
-            <li className="flex items-start gap-2">
-              <span className="text-cyber-neon-pink font-bold">1.</span>
-              <span className="text-cyber-text-primary">{t('content.line1')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyber-neon-pink font-bold">2.</span>
-              <span className="text-cyber-text-primary">{t('content.line2')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyber-neon-pink font-bold">3.</span>
-              <span className="text-cyber-text-primary">{t('content.line3')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-cyber-neon-pink font-bold">4.</span>
-              <span className="text-cyber-text-primary">{t('content.line4')}</span>
-            </li>
-          </ul>
-        </div>
+        <a
+          href="https://github.com/NanmiCoder/MediaCrawler/blob/main/LICENSE"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-cyber-text-secondary underline-offset-4 hover:text-cyber-text-primary hover:underline"
+        >
+          <ExternalLink className="h-4 w-4" />
+          {t('license')}
+        </a>
 
-        {/* License Link */}
-        <div className="flex justify-center mb-6">
-          <a
-            href="https://github.com/NanmiCoder/MediaCrawler/blob/main/LICENSE"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-cyber-neon-cyan hover:underline text-sm font-mono"
-          >
-            <ExternalLink className="w-4 h-4" />
-            {t('license')}
-          </a>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-4">
-          <Button
-            onClick={handleDecline}
-            variant="outline"
-            className="flex-1 font-mono border-cyber-neon-pink/50 text-cyber-neon-pink hover:bg-cyber-neon-pink/10"
-          >
+        <div className="flex gap-3">
+          <Button onClick={handleDecline} variant="outline" className="flex-1">
             {t('decline')}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            className="flex-1 font-mono bg-cyber-neon-green text-black font-bold hover:bg-cyber-neon-green/90"
-          >
+          <Button onClick={handleConfirm} className="flex-1">
             {t('confirm')}
           </Button>
         </div>
