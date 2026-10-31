@@ -1,6 +1,7 @@
 import type { ReactNode, KeyboardEvent } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { Play, Square, X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -10,6 +11,20 @@ import { Button } from '@/components/ui/button'
 import { useCrawlerStore } from '@/store/crawlerStore'
 import { usePlatforms, useConfigOptions, useStartCrawler, useStopCrawler } from '@/hooks/useCrawler'
 import { ParsedIdList } from './ParsedIdList'
+
+type TargetErrorKey = 'keywords' | 'specifiedIds' | 'creatorIds'
+
+function hasTargetIds(value: string) {
+  return value.split(/[,\n]+/).some((part) => part.trim().length > 0)
+}
+
+function TargetError({ message }: { message: string }) {
+  return (
+    <div className="rounded-lg bg-cyber-neon-orange/10 px-3 py-2.5 text-xs leading-relaxed text-cyber-text-secondary">
+      {message}
+    </div>
+  )
+}
 
 const areaClass =
   'min-h-[92px] w-full rounded-lg border border-cyber-border-DEFAULT bg-cyber-bg-primary px-3 py-2.5 text-sm leading-relaxed text-cyber-text-primary placeholder:text-cyber-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyber-text-primary/10 disabled:cursor-not-allowed disabled:opacity-50'
@@ -149,9 +164,27 @@ export function CrawlerConfigPanel() {
   const { mutate: startCrawler, isPending: isStarting } = useStartCrawler()
   const { mutate: stopCrawler, isPending: isStopping } = useStopCrawler()
 
+  const [targetError, setTargetError] = useState<TargetErrorKey | null>(null)
+
   const isDisabled = status === 'running' || status === 'stopping'
   const isRunning = status === 'running'
   const isBusy = isStarting || isStopping || status === 'stopping'
+
+  const handleStart = () => {
+    const missing: Record<string, { key: TargetErrorKey; value: string; message: string }> = {
+      search: { key: 'keywords', value: config.keywords, message: t('error.keywordsRequired') },
+      detail: { key: 'specifiedIds', value: config.specified_ids, message: t('error.specifiedIdsRequired') },
+      creator: { key: 'creatorIds', value: config.creator_ids, message: t('error.creatorIdsRequired') },
+    }
+    const current = missing[config.crawler_type]
+    if (current && !hasTargetIds(current.value)) {
+      setTargetError(current.key)
+      toast.error(current.message)
+      return
+    }
+    setTargetError(null)
+    startCrawler(config)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -190,7 +223,10 @@ export function CrawlerConfigPanel() {
               <Field label={t('field.crawlType')}>
                 <Select
                   value={config.crawler_type}
-                  onValueChange={(value) => updateConfig({ crawler_type: value })}
+                  onValueChange={(value) => {
+                    updateConfig({ crawler_type: value })
+                    setTargetError(null)
+                  }}
                   disabled={isDisabled}
                 >
                   <SelectTrigger>
@@ -222,9 +258,13 @@ export function CrawlerConfigPanel() {
                 <KeywordInput
                   placeholder={t('field.keywordsPlaceholder')}
                   value={config.keywords}
-                  onChange={(keywords) => updateConfig({ keywords })}
+                  onChange={(keywords) => {
+                    updateConfig({ keywords })
+                    if (hasTargetIds(keywords)) setTargetError(null)
+                  }}
                   disabled={isDisabled}
                 />
+                {targetError === 'keywords' ? <TargetError message={t('error.keywordsRequired')} /> : null}
               </Field>
             )}
 
@@ -232,11 +272,15 @@ export function CrawlerConfigPanel() {
               <Field label={t('field.specifiedIds')} hint={t('field.specifiedIdsHint')}>
                 <textarea
                   value={config.specified_ids}
-                  onChange={(e) => updateConfig({ specified_ids: e.target.value })}
+                  onChange={(e) => {
+                    updateConfig({ specified_ids: e.target.value })
+                    if (hasTargetIds(e.target.value)) setTargetError(null)
+                  }}
                   disabled={isDisabled}
                   placeholder={t(`field.specifiedIdsPlaceholder.${config.platform}`, t('field.specifiedIdsPlaceholder.default'))}
                   className={`${areaClass} font-mono text-xs`}
                 />
+                {targetError === 'specifiedIds' ? <TargetError message={t('error.specifiedIdsRequired')} /> : null}
                 <ParsedIdList
                   value={config.specified_ids}
                   platform={config.platform}
@@ -255,11 +299,15 @@ export function CrawlerConfigPanel() {
               <Field label={t('field.creatorIds')} hint={t('field.creatorIdsHint')}>
                 <textarea
                   value={config.creator_ids}
-                  onChange={(e) => updateConfig({ creator_ids: e.target.value })}
+                  onChange={(e) => {
+                    updateConfig({ creator_ids: e.target.value })
+                    if (hasTargetIds(e.target.value)) setTargetError(null)
+                  }}
                   disabled={isDisabled}
                   placeholder={t(`field.creatorIdsPlaceholder.${config.platform}`, t('field.creatorIdsPlaceholder.default'))}
                   className={`${areaClass} font-mono text-xs`}
                 />
+                {targetError === 'creatorIds' ? <TargetError message={t('error.creatorIdsRequired')} /> : null}
                 <ParsedIdList
                   value={config.creator_ids}
                   platform={config.platform}
@@ -417,7 +465,7 @@ export function CrawlerConfigPanel() {
           </Button>
         ) : (
           <Button
-            onClick={() => startCrawler(config)}
+            onClick={handleStart}
             disabled={isBusy}
             className="h-11 w-full text-sm tracking-wide"
           >

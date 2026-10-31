@@ -89,7 +89,42 @@ def test_crawler_manager_passes_media_switch():
 
 
 def test_api_schema_exposes_media_switch_default_off():
-    assert CrawlerStartRequest(platform=PlatformEnum.XHS).enable_media is False
+    assert CrawlerStartRequest(platform=PlatformEnum.XHS, keywords="test").enable_media is False
+
+
+def test_empty_search_target_is_rejected():
+    client = TestClient(app)
+    cases = [
+        {"crawler_type": "search", "keywords": " , "},
+        {"crawler_type": "detail", "specified_ids": " \n,"},
+        {"crawler_type": "creator", "creator_ids": ""},
+    ]
+
+    with patch("api.routers.crawler.crawler_manager.start", new_callable=AsyncMock) as mock_start:
+        for payload in cases:
+            response = client.post("/api/crawler/start", json={
+                "platform": "dy",
+                "login_type": "qrcode",
+                **payload,
+            })
+            assert response.status_code == 422
+
+    mock_start.assert_not_called()
+
+
+def test_detail_without_specified_ids_is_rejected():
+    client = TestClient(app)
+
+    with patch("api.routers.crawler.crawler_manager.start", new_callable=AsyncMock) as mock_start:
+        response = client.post("/api/crawler/start", json={
+            "platform": "dy",
+            "login_type": "qrcode",
+            "crawler_type": "detail",
+            "specified_ids": " \n,",
+        })
+
+    assert response.status_code == 422
+    mock_start.assert_not_called()
 
 def test_api_start_crawler_with_limits():
     client = TestClient(app)
