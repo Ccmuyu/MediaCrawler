@@ -74,6 +74,11 @@
     "terminate": "Stop",
     "stopping": "Stopping"
   },
+  "error": {
+    "keywordsRequired": "Enter a keyword before starting",
+    "specifiedIdsRequired": "Enter a post or video ID before starting",
+    "creatorIdsRequired": "Enter a creator ID before starting"
+  },
   "warning": {
     "cookieSlider": "[Note] Cookie login is not recommended for Xiaohongshu and Douyin due to slider captcha",
     "xhsToken": "[Important] Xiaohongshu URLs must contain xsec_token parameter, please copy the full URL from browser"

@@ -18,7 +18,7 @@
 
 from enum import Enum
 from typing import Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 MAX_API_LIMIT_COUNT = 10000
@@ -84,6 +84,23 @@ class CrawlerStartRequest(BaseModel):
     headless: bool = False
     max_notes_count: Optional[int] = Field(default=None, ge=1, le=MAX_API_LIMIT_COUNT)
     max_comments_count: Optional[int] = Field(default=None, ge=1, le=MAX_API_LIMIT_COUNT)
+
+    @model_validator(mode="after")
+    def require_search_target(self):
+        """当前模式必须带上对应的查找条件。
+
+        关键词、帖子 ID 或创作者 ID 为空时，命令行会继续用配置文件里的示例值。
+        """
+        required = {
+            CrawlerTypeEnum.SEARCH: (self.keywords, "Search mode requires keywords"),
+            CrawlerTypeEnum.DETAIL: (self.specified_ids, "Detail mode requires a post or video ID"),
+            CrawlerTypeEnum.CREATOR: (self.creator_ids, "Creator mode requires a creator ID"),
+        }
+        value, message = required[self.crawler_type]
+        tokens = [part.strip() for part in value.replace("\n", ",").split(",")]
+        if not any(tokens):
+            raise ValueError(message)
+        return self
 
 
 class CrawlerStatusResponse(BaseModel):
