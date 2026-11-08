@@ -98,6 +98,41 @@ async def get_a_bogus_from_playwright(params: str, post_data: dict, user_agent: 
     return a_bogus
 
 
+_DOUYIN_URL_RE = re.compile(
+    r"https?://(?:v|www|m)\.douyin\.com/[A-Za-z0-9_./?=&%-]+",
+    re.IGNORECASE,
+)
+_DOUYIN_URL_TRAILING = ".,，。！!、)）]>\"'"
+
+
+def extract_douyin_targets(text: str) -> list[str]:
+    """从抖音分享口令里取出能解析的链接或纯视频 ID。
+
+    口令正文带说明文字，短链码本身也不是作品 ID。整段拿去请求会失败，必须先抽出完整短链。
+    """
+    if not text or not str(text).strip():
+        return []
+    raw = str(text)
+    targets: list[str] = []
+    seen: set[str] = set()
+
+    def add(value: str) -> None:
+        if value and value not in seen:
+            seen.add(value)
+            targets.append(value)
+
+    for match in _DOUYIN_URL_RE.findall(raw):
+        add(match.rstrip(_DOUYIN_URL_TRAILING))
+    for part in re.split(r"[\n,，]+", raw):
+        token = part.strip()
+        if token.isdigit() and len(token) >= 6:
+            add(token)
+    if targets:
+        return targets
+    token = raw.strip()
+    return [token] if token else []
+
+
 def parse_video_info_from_url(url: str) -> VideoUrlInfo:
     """
     Parse video ID from Douyin video URL

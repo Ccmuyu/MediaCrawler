@@ -2,6 +2,7 @@ import { Github } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCrawlerStore } from '@/store/crawlerStore'
 import { useCrawlerStatus } from '@/hooks/useCrawler'
+import { BackendSwitch } from './BackendSwitch'
 import { LanguageSwitch } from './LanguageSwitch'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -33,6 +34,7 @@ export function Sidebar({ onShowDisclaimer }: SidebarProps) {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
+        <BackendSwitch />
         <button
           type="button"
           onClick={onShowDisclaimer}

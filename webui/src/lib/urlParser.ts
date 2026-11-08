@@ -61,6 +61,28 @@ const platformPatterns: Record<string, {
   },
 }
 
+const douyinUrlPattern = /https?:\/\/(?:v|www|m)\.douyin\.com\/[A-Za-z0-9_./?=&%-]+/gi
+
+export function collectDouyinDetailTargets(input: string): string[] {
+  const targets: string[] = []
+  const seen = new Set<string>()
+  const add = (value: string) => {
+    if (value && !seen.has(value)) {
+      seen.add(value)
+      targets.push(value)
+    }
+  }
+
+  for (const match of input.match(douyinUrlPattern) ?? []) {
+    add(match.replace(/[.,，。！!、)）\]>"']+$/g, ''))
+  }
+  for (const part of input.split(/[\n,，]+/)) {
+    const token = part.trim()
+    if (/^\d{6,}$/.test(token)) add(token)
+  }
+  return targets
+}
+
 export function parseUrl(input: string, platform: string): ParsedId {
   const trimmed = input.trim()
 
@@ -131,6 +153,11 @@ export function parseUrl(input: string, platform: string): ParsedId {
 
 export function parseMultipleUrls(input: string, platform: string): ParsedId[] {
   if (!input.trim()) return []
+
+  if (platform === 'dy') {
+    const targets = collectDouyinDetailTargets(input)
+    if (targets.length) return targets.map((item) => parseUrl(item, platform))
+  }
 
   const items = input
     .split(/[,\n]+/)

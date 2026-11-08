@@ -35,7 +35,7 @@
     "specifiedIdsPlaceholder": {
       "bili": "Examples:\nBV1xxxx\nhttps://www.bilibili.com/video/BV1xxxx",
       "xhs": "Examples:\nhttps://www.xiaohongshu.com/explore/xxx?xsec_token=xxx\n(must include xsec_token)",
-      "dy": "Examples:\n7525538910311632128\nhttps://www.douyin.com/video/xxx\nhttps://v.douyin.com/xxx (short link)",
+      "dy": "Examples:\n7525538910311632128\nhttps://v.douyin.com/xxx\nOr paste a Douyin share text",
       "wb": "Examples:\n4982041758140155\nhttps://weibo.com/xxx/xxx",
       "ks": "Examples:\n3xf8enb8dbj6uig\nhttps://www.kuaishou.com/short-video/xxx",
       "default": "Enter post/video ID or URL..."

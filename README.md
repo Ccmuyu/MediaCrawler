@@ -140,17 +140,7 @@ uv run playwright install
 
 ### 2. 启动 WebUI
 
-WebUI 是两个进程：API 在 **8080**，页面在 **5173**。只开页面时，Vite 会把 `/api` 代理到 8080，连不上就会弹出环境检测失败（`Cannot connect to API server`）。
-
-开两个终端。
-
-终端 1 在项目根目录启动 API。看到 `Uvicorn running on http://127.0.0.1:8080` 再开下一个终端：
-
-```shell
-uv run uvicorn api.main:app --port 8080 --reload
-```
-
-终端 2，启动页面：
+开发时只需要启动页面。页面顶栏有「后端 API」开关，用来拉起或停掉 8080 上的 API。Vite 仍把 `/api` 代理到 8080；API 没开时环境检测会失败，弹窗里也有同一个开关。
 
 ```shell
 cd webui
@@ -158,9 +148,15 @@ pnpm install
 pnpm dev
 ```
 
-浏览器打开 <http://localhost:5173>。
+浏览器打开 <http://localhost:5173>，打开后端开关，等到状态变成「已启动」。
 
-第一次进入会先看免责声明，再做环境检测（请求 `/api/env/check`）。检测失败时先确认终端 1 还在跑，然后点 **RETRY_SCAN**。暂时跳过可以点 **SKIP_CHECK**，跳过只关掉弹窗，API 没启动的话后面的开始、日志仍然不可用。
+也可以不用开关，在项目根目录另开终端手动启动 API：
+
+```shell
+uv run uvicorn api.main:app --port 8080 --reload
+```
+
+第一次进入会先看免责声明，再做环境检测（请求 `/api/env/check`）。检测失败时先确认后端已启动，然后点 **RETRY_SCAN**。暂时跳过可以点 **SKIP_CHECK**，跳过只关掉弹窗，API 没启动的话后面的开始、日志仍然不可用。
 
 在页面上操作：
 
