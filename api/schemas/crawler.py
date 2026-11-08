@@ -75,9 +75,9 @@ class CrawlerStartRequest(BaseModel):
     specified_ids: str = ""  # Post/video ID list for detail mode, comma-separated
     creator_ids: str = ""  # Creator ID list for creator mode, comma-separated
     start_page: int = 1
-    enable_comments: bool = True
+    enable_comments: bool = False
     enable_sub_comments: bool = False
-    enable_media: bool = False
+    enable_media: bool = True
     media_save_layout: MediaSaveLayoutEnum = MediaSaveLayoutEnum.POST
     save_option: SaveDataOptionEnum = SaveDataOptionEnum.JSONL
     cookies: str = ""

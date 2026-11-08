@@ -396,27 +396,6 @@ export function CrawlerConfigPanel() {
 
             <div className="-mx-1">
               <OptionRow
-                checked={config.enable_comments}
-                onCheckedChange={(isChecked) => {
-                  updateConfig({
-                    enable_comments: isChecked,
-                    enable_sub_comments: isChecked ? config.enable_sub_comments : false,
-                  })
-                }}
-                disabled={isDisabled}
-                title={t('field.commentExtraction')}
-              />
-              {config.enable_comments ? (
-                <div className="ml-7 border-l border-cyber-border-DEFAULT pl-3">
-                  <OptionRow
-                    checked={config.enable_sub_comments}
-                    onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked })}
-                    disabled={isDisabled}
-                    title={t('field.subComments')}
-                  />
-                </div>
-              ) : null}
-              <OptionRow
                 checked={config.enable_media}
                 onCheckedChange={(checked) => updateConfig({ enable_media: checked })}
                 disabled={isDisabled}
@@ -442,6 +421,27 @@ export function CrawlerConfigPanel() {
                       </SelectContent>
                     </Select>
                   </Field>
+                </div>
+              ) : null}
+              <OptionRow
+                checked={config.enable_comments}
+                onCheckedChange={(isChecked) => {
+                  updateConfig({
+                    enable_comments: isChecked,
+                    enable_sub_comments: isChecked ? config.enable_sub_comments : false,
+                  })
+                }}
+                disabled={isDisabled}
+                title={t('field.commentExtraction')}
+              />
+              {config.enable_comments ? (
+                <div className="ml-7 border-l border-cyber-border-DEFAULT pl-3">
+                  <OptionRow
+                    checked={config.enable_sub_comments}
+                    onCheckedChange={(checked) => updateConfig({ enable_sub_comments: checked })}
+                    disabled={isDisabled}
+                    title={t('field.subComments')}
+                  />
                 </div>
               ) : null}
               <OptionRow
