@@ -35,7 +35,7 @@
     "specifiedIdsPlaceholder": {
       "bili": "示例:\nBV1xxxx\nhttps://www.bilibili.com/video/BV1xxxx",
       "xhs": "示例:\nhttps://www.xiaohongshu.com/explore/xxx?xsec_token=xxx\n(必须包含xsec_token参数)",
-      "dy": "示例:\n7525538910311632128\nhttps://www.douyin.com/video/xxx\nhttps://v.douyin.com/xxx (短链接)",
+      "dy": "示例:\n7525538910311632128\nhttps://v.douyin.com/xxx\n也可直接粘贴抖音分享口令",
       "wb": "示例:\n4982041758140155\nhttps://weibo.com/xxx/xxx",
       "ks": "示例:\n3xf8enb8dbj6uig\nhttps://www.kuaishou.com/short-video/xxx",
       "default": "输入帖子/视频 ID 或 URL..."

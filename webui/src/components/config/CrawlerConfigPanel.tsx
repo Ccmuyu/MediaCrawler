@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useCrawlerStore } from '@/store/crawlerStore'
 import { usePlatforms, useConfigOptions, useStartCrawler, useStopCrawler } from '@/hooks/useCrawler'
 import { ParsedIdList } from './ParsedIdList'
+import { collectDouyinDetailTargets } from '@/lib/urlParser'
 
 type TargetErrorKey = 'keywords' | 'specifiedIds' | 'creatorIds'
 
@@ -171,9 +172,12 @@ export function CrawlerConfigPanel() {
   const isBusy = isStarting || isStopping || status === 'stopping'
 
   const handleStart = () => {
+    const specifiedIds = config.platform === 'dy' && config.crawler_type === 'detail'
+      ? collectDouyinDetailTargets(config.specified_ids).join(',')
+      : config.specified_ids
     const missing: Record<string, { key: TargetErrorKey; value: string; message: string }> = {
       search: { key: 'keywords', value: config.keywords, message: t('error.keywordsRequired') },
-      detail: { key: 'specifiedIds', value: config.specified_ids, message: t('error.specifiedIdsRequired') },
+      detail: { key: 'specifiedIds', value: specifiedIds, message: t('error.specifiedIdsRequired') },
       creator: { key: 'creatorIds', value: config.creator_ids, message: t('error.creatorIdsRequired') },
     }
     const current = missing[config.crawler_type]
@@ -183,7 +187,7 @@ export function CrawlerConfigPanel() {
       return
     }
     setTargetError(null)
-    startCrawler(config)
+    startCrawler({ ...config, specified_ids: specifiedIds })
   }
 
   return (

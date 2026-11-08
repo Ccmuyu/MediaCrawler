@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle, XCircle, Loader2, RefreshCw, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BackendSwitch } from '@/components/layout/BackendSwitch'
 import { envApi, EnvCheckResult } from '@/lib/api'
 
 const ENV_CHECK_KEY = 'mediacrawler_env_checked'
@@ -110,6 +111,14 @@ export function EnvironmentCheck({ onCheckComplete }: EnvironmentCheckProps) {
             </div>
           )}
         </div>
+
+        {status === 'error' && (
+          <div className="mb-4">
+            <BackendSwitch onRunningChange={(running) => {
+              if (running) checkEnvironment()
+            }} />
+          </div>
+        )}
 
         {status === 'error' && (
           <div className="mb-5 space-y-2 text-sm text-cyber-text-secondary">

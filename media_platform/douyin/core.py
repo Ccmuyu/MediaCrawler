@@ -45,7 +45,7 @@ from . import media as douyin_media
 from .client import DouYinClient
 from .exception import DataFetchError
 from .field import PublishTimeType
-from .help import parse_video_info_from_url, parse_creator_info_from_url
+from .help import extract_douyin_targets, parse_video_info_from_url, parse_creator_info_from_url
 from .login import DouYinLogin
 
 
@@ -188,7 +188,10 @@ class DouYinCrawler(AbstractCrawler):
         """Get the information and comments of the specified post from URLs or IDs"""
         utils.logger.info("[DouYinCrawler.get_specified_awemes] Parsing video URLs...")
         aweme_id_list = []
+        targets: list[str] = []
         for video_url in config.DY_SPECIFIED_ID_LIST:
+            targets.extend(extract_douyin_targets(video_url))
+        for video_url in targets:
             try:
                 video_info = parse_video_info_from_url(video_url)
 

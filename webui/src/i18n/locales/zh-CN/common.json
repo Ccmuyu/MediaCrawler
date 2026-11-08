@@ -14,6 +14,17 @@
     "disclaimer": "仅供个人学习研究使用，禁止商业用途",
     "license": "查看协议"
   },
+  "backend": {
+    "label": "后端 API",
+    "running": "已启动",
+    "stopped": "已停止",
+    "starting": "启动中",
+    "stopping": "停止中",
+    "uv_not_found": "找不到 uv，无法启动后端",
+    "start_timeout": "后端启动超时",
+    "start_failed": "后端启动失败",
+    "stop_failed": "后端停止失败"
+  },
   "action": {
     "loading": "加载中...",
     "skip": "跳过检测",
