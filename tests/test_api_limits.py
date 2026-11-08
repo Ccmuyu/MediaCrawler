@@ -71,6 +71,7 @@ def test_crawler_manager_passes_media_switch():
         login_type=LoginTypeEnum.QRCODE,
         crawler_type=CrawlerTypeEnum.DETAIL,
         specified_ids="note-1",
+        enable_media=False,
     )
     cmd_off = cm._build_command(req_off)
     idx_off = cmd_off.index("--get_media")
@@ -88,8 +89,10 @@ def test_crawler_manager_passes_media_switch():
     assert cmd_on[idx_on + 1] == "true"
 
 
-def test_api_schema_exposes_media_switch_default_off():
-    assert CrawlerStartRequest(platform=PlatformEnum.XHS, keywords="test").enable_media is False
+def test_api_schema_defaults_match_page():
+    request = CrawlerStartRequest(platform=PlatformEnum.XHS, keywords="test")
+    assert request.enable_media is True
+    assert request.enable_comments is False
 
 
 def test_empty_search_target_is_rejected():
