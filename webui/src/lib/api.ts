@@ -18,6 +18,7 @@ export interface CrawlerConfig {
   enable_comments: boolean
   enable_sub_comments: boolean
   enable_media: boolean
+  media_save_layout: 'post' | 'creator'
   save_option: string
   cookies: string
   headless: boolean

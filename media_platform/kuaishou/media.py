@@ -99,6 +99,19 @@ def extract_cover_url(video_item: Dict) -> str:
     return ""
 
 
+def extract_creator_id(video_item: Dict) -> str:
+    """创作者目录名。优先 author.id；列表项有时只有 photo，没有作者块时退到 userId。"""
+    if not isinstance(video_item, dict):
+        return ""
+    author = video_item.get("author")
+    if isinstance(author, dict) and author.get("id"):
+        return str(author["id"])
+    photo = video_item.get("photo")
+    if isinstance(photo, dict) and photo.get("userId"):
+        return str(photo["userId"])
+    return ""
+
+
 def build_media_items(video_item: Dict) -> List[MediaItem]:
     """把一个快手作品转换成待下载的媒体任务列表：封面 + 视频"""
     if not isinstance(video_item, dict):

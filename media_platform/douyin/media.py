@@ -91,6 +91,20 @@ def extract_video_urls(aweme_detail: Dict) -> List[str]:
     return []
 
 
+def extract_creator_id(aweme_item: Dict) -> str:
+    """创作者目录名。优先 sec_uid，与主页链接里的创作者 ID 一致。
+
+    没有 sec_uid 时才退回数字 uid，避免目录名和用户粘贴的主页 ID 对不上。
+    """
+    if not isinstance(aweme_item, dict):
+        return ""
+    author = aweme_item.get("author")
+    if not isinstance(author, dict):
+        return ""
+    creator_id = author.get("sec_uid") or author.get("uid") or ""
+    return str(creator_id)
+
+
 def extract_live_photo_video_urls(image: Dict) -> List[str]:
     """提取实况图/动图随附的短视频候选地址列表。
 

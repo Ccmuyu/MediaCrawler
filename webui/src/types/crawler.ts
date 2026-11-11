@@ -9,6 +9,7 @@ export interface CrawlerConfig {
   enable_comments: boolean
   enable_sub_comments: boolean
   enable_media: boolean  // 是否下载媒体（封面/视频/图文图片），支持 xhs/dy/ks/bili/wb
+  media_save_layout: 'post' | 'creator'  // 创作者模式：post=封面+视频分目录，creator=仅视频按创作者ID归档
   save_option: string
   cookies: string
   headless: boolean

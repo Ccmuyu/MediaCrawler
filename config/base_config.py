@@ -110,6 +110,12 @@ MAX_CONCURRENCY_NUM = 1
 # 命令行开关：--get_media
 ENABLE_GET_MEDIA = False
 
+# 创作者模式下的媒体目录布局。仅当 CRAWLER_TYPE 为 creator 时生效。
+# post: 每个作品一个目录，保存封面和视频（或图文图片）
+# creator: 只下载视频，全部放到以创作者 ID 命名的目录里
+# 命令行开关：--media_save_layout
+MEDIA_SAVE_LAYOUT = "post"
+
 # 是否下载实况照片（Live Photo）随附的视频，统一控制抖音和小红书。
 # 仅在 ENABLE_GET_MEDIA 开启时生效；关闭后只下载静态图片，不影响普通视频。
 # 视频与静态图配对保存为 001_live.mp4 / 001.jpg，不合成相册实况照片。

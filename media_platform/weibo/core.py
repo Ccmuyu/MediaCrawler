@@ -39,6 +39,7 @@ from playwright.async_api import (
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
+from media_downloader.layout import apply_creator_video_layout
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import weibo as weibo_store
 from tools import utils
@@ -283,7 +284,10 @@ class WeiboCrawler(AbstractCrawler):
         if not config.ENABLE_GET_MEDIA:
             return
         try:
-            items = weibo_media.build_media_items(mblog)
+            items = apply_creator_video_layout(
+                weibo_media.build_media_items(mblog),
+                weibo_media.extract_creator_id(mblog),
+            )
             if items:
                 await self._get_media_downloader().download_all(items)
         except Exception as exc:
