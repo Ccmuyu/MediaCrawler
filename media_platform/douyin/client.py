@@ -355,17 +355,32 @@ class DouYinClient(AbstractApiClient, ProxyRefreshMixin):
         return await self.get(uri, params)
 
     async def get_all_user_aweme_posts(self, sec_user_id: str, callback: Optional[Callable] = None):
+        """按 max_cursor 翻完创作者的作品列表。每页先交给 callback，再请求下一页。
+
+        callback 被 await，所以这一页的详情和下载没结束就不会发下一页请求。
+        第二个参数是从 1 开始的页码，方便调用方打进度。
+        返回值仍是全部列表项，供翻完后抓评论；它不包含下载结果。
+        """
         posts_has_more = 1
         max_cursor = ""
         result = []
+        page_no = 0
         while posts_has_more == 1:
             aweme_post_res = await self.get_user_aweme_posts(sec_user_id, max_cursor)
             posts_has_more = aweme_post_res.get("has_more", 0)
             max_cursor = aweme_post_res.get("max_cursor")
             aweme_list = aweme_post_res.get("aweme_list") if aweme_post_res.get("aweme_list") else []
-            utils.logger.info(f"[DouYinClient.get_all_user_aweme_posts] get sec_user_id:{sec_user_id} video len : {len(aweme_list)}")
+            page_no += 1
+            # 有 callback 时由调用方打带累计下载数的进度，这里不再重复一行页码
             if callback:
-                await callback(aweme_list)
+                await callback(aweme_list, page_no)
+            else:
+                utils.logger.info(
+                    "[DouYinClient.get_all_user_aweme_posts] 第 %s 页，本页 %s 条 sec_user_id:%s",
+                    page_no,
+                    len(aweme_list),
+                    sec_user_id,
+                )
             result.extend(aweme_list)
         return result
 

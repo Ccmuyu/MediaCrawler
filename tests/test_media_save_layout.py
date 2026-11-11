@@ -7,9 +7,17 @@ import config
 import pytest
 
 from media_downloader import MediaItem, MediaType
-from media_downloader.layout import apply_creator_video_layout, creator_file_stem
-from media_downloader.paths import build_media_dir
+from media_downloader.layout import (
+    apply_creator_video_layout,
+    creator_file_stem,
+    save_creator_profile,
+)
+from media_downloader.paths import build_file_path, build_media_dir
+from media_platform.bilibili import media as bili_media
 from media_platform.douyin import media as douyin_media
+from media_platform.kuaishou import media as kuaishou_media
+from media_platform.weibo import media as weibo_media
+from media_platform.xhs import media as xhs_media
 
 
 CREATOR_ID = "MS4wLjABAAAA" + ("Ab12" * 16)
@@ -103,6 +111,149 @@ def test_creator_folder_keeps_long_sec_uid(tmp_path, monkeypatch):
 
     assert directory.name == CREATOR_ID
     assert placed[0].stem == AWEME_ID
+
+
+def test_douyin_profile_uses_sec_uid_homepage():
+    profile = douyin_media.creator_profile({
+        "author": {
+            "uid": "123",
+            "sec_uid": CREATOR_ID,
+            "unique_id": "dy_account",
+            "nickname": "创作者甲",
+            "signature": "第一行\n第二行",
+            "gender": 1,
+            "ip_location": "上海",
+        }
+    })
+
+    assert profile["homepage"] == f"https://www.douyin.com/user/{CREATOR_ID}"
+    assert profile["nickname"] == "创作者甲"
+    assert profile["account"] == "dy_account"
+    assert "gender" not in profile
+    assert "ip_location" not in profile
+
+
+def test_douyin_profile_without_sec_uid_has_no_homepage():
+    profile = douyin_media.creator_profile({"author": {"uid": "123", "nickname": "只有数字号"}})
+
+    assert profile["homepage"] == ""
+    assert profile["nickname"] == "只有数字号"
+
+
+def test_other_platforms_build_homepage_without_private_fields():
+    xhs = xhs_media.creator_profile({
+        "user": {"user_id": "u1", "nickname": "红薯", "red_id": "12345", "xsec_token": "tok", "desc": "简介"},
+    })
+    ks = kuaishou_media.creator_profile({
+        "author": {"id": "3xabc", "name": "快手", "kwaiId": "kwai1"},
+    })
+    wb = weibo_media.creator_profile({
+        "user": {
+            "id": 99,
+            "screen_name": "微博",
+            "profile_url": "https://weibo.com/u/99",
+            "description": "签名",
+            "gender": "f",
+            "ip_location": "上海",
+            "followers_count": 10,
+        }
+    })
+    bili = bili_media.creator_profile({"owner": {"mid": 777, "name": "UP", "sign": "空间签名"}})
+
+    assert xhs["homepage"] == "https://www.xiaohongshu.com/user/profile/u1?xsec_token=tok&xsec_source=pc_feed"
+    assert xhs["account"] == "12345"
+    assert ks["homepage"] == "https://www.kuaishou.com/profile/3xabc"
+    assert wb["homepage"] == "https://weibo.com/u/99"
+    assert "ip_location" not in wb
+    assert bili["homepage"] == "https://space.bilibili.com/777"
+
+
+def test_creator_folder_saves_author_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    profile = douyin_media.creator_profile({
+        "author": {
+            "sec_uid": CREATOR_ID,
+            "unique_id": "dy_account",
+            "nickname": "创作者甲",
+            "signature": "第一行\n第二行",
+        }
+    })
+
+    path = save_creator_profile(tmp_path, "dy", CREATOR_ID, profile)
+
+    assert path is not None
+    assert path.parent.name == CREATOR_ID
+    assert path.read_text(encoding="utf-8") == (
+        "昵称: 创作者甲\n"
+        "账号: dy_account\n"
+        "签名: 第一行 第二行\n"
+        f"主页: https://www.douyin.com/user/{CREATOR_ID}\n"
+    )
+    assert save_creator_profile(tmp_path, "dy", CREATOR_ID, profile) == path
+
+
+def test_author_file_is_not_written_outside_creator_layout(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "search")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+
+    path = save_creator_profile(
+        tmp_path,
+        "dy",
+        CREATOR_ID,
+        {"nickname": "创作者甲", "homepage": "https://www.douyin.com/user/x"},
+    )
+
+    assert path is None
+    assert not (tmp_path / "dy").exists()
+
+
+def _video(content_id: str, stem: str = "video") -> MediaItem:
+    return MediaItem(
+        url="https://cdn/video.mp4",
+        media_type=MediaType.VIDEO,
+        content_id=content_id,
+        stem=stem,
+    )
+
+
+def test_title_names_file_and_keeps_duplicates_apart(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "MEDIA_FILE_NAME", "title")
+    monkeypatch.setattr(config, "PLATFORM", "dy")
+    monkeypatch.setattr(config, "SAVE_DATA_PATH", str(tmp_path))
+
+    first = apply_creator_video_layout([_video("111")], CREATOR_ID, "夏天的风")
+    second = apply_creator_video_layout([_video("222")], CREATOR_ID, "夏天的风 / 完整版")
+    duplicate = apply_creator_video_layout([_video("333")], CREATOR_ID, "夏天的风")
+    again = apply_creator_video_layout([_video("111")], CREATOR_ID, "夏天的风")
+
+    assert first[0].stem == "夏天的风"
+    assert second[0].stem == "夏天的风 _ 完整版"
+    assert duplicate[0].stem == "夏天的风_333"
+    assert again[0].stem == "夏天的风"
+    assert build_file_path(tmp_path, first[0].stem, ".mp4").name == "夏天的风.mp4"
+
+
+def test_id_mode_keeps_the_post_id(monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "MEDIA_FILE_NAME", "id")
+
+    placed = apply_creator_video_layout([_video(AWEME_ID)], CREATOR_ID, "夏天的风")
+
+    assert placed[0].stem == AWEME_ID
+
+
+def test_empty_title_falls_back_to_post_id(monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "MEDIA_FILE_NAME", "title")
+
+    placed = apply_creator_video_layout([_video(AWEME_ID, "001_live")], CREATOR_ID, "   ")
+
+    assert placed[0].stem == f"{AWEME_ID}_001_live"
 
 
 @pytest.mark.parametrize(

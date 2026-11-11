@@ -180,6 +180,34 @@ def extract_creator_id(note_item: Dict) -> str:
     return str(creator_id)
 
 
+def note_title(note_item: Dict) -> str:
+    """作品标题。笔记常没有 title，这时用正文；两者都空则文件名退回作品 ID。"""
+    if not isinstance(note_item, dict):
+        return ""
+    return str(note_item.get("title") or note_item.get("desc") or "").strip()
+
+
+def creator_profile(note_item: Dict) -> Dict[str, str]:
+    """作者卡片：昵称、小红书号、简介、主页。
+
+    笔记里若带 xsec_token，主页带上它，否则网页经常打不开这个用户。
+    """
+    user = note_item.get("user") if isinstance(note_item, dict) else None
+    if not isinstance(user, dict):
+        user = {}
+    user_id = str(user.get("user_id") or user.get("userid") or "").strip()
+    homepage = f"https://www.xiaohongshu.com/user/profile/{user_id}" if user_id else ""
+    token = str(user.get("xsec_token") or "").strip()
+    if homepage and token:
+        homepage = f"{homepage}?xsec_token={token}&xsec_source=pc_feed"
+    return {
+        "nickname": str(user.get("nickname") or "").strip(),
+        "account": str(user.get("red_id") or "").strip(),
+        "signature": str(user.get("desc") or user.get("signature") or "").strip(),
+        "homepage": homepage,
+    }
+
+
 def build_media_items(note_item: Dict) -> List[MediaItem]:
     """把一个笔记转换成待下载的媒体任务列表。
 

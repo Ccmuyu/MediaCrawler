@@ -55,6 +55,12 @@ class MediaSaveLayoutEnum(str, Enum):
     CREATOR = "creator"
 
 
+class MediaFileNameEnum(str, Enum):
+    """File name inside a creator folder."""
+    ID = "id"
+    TITLE = "title"
+
+
 class SaveDataOptionEnum(str, Enum):
     """Data save option"""
     CSV = "csv"
@@ -79,6 +85,7 @@ class CrawlerStartRequest(BaseModel):
     enable_sub_comments: bool = False
     enable_media: bool = True
     media_save_layout: MediaSaveLayoutEnum = MediaSaveLayoutEnum.POST
+    media_file_name: MediaFileNameEnum = MediaFileNameEnum.TITLE
     save_option: SaveDataOptionEnum = SaveDataOptionEnum.JSONL
     cookies: str = ""
     headless: bool = False

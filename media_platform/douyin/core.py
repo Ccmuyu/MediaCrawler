@@ -34,7 +34,7 @@ from playwright.async_api import (
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
-from media_downloader.layout import apply_creator_video_layout
+from media_downloader.layout import apply_creator_video_layout, save_creator_profile
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import douyin as douyin_store
 from tools import utils
@@ -67,6 +67,8 @@ class DouYinCrawler(AbstractCrawler):
         self.cdp_manager = None
         self.ip_proxy_pool = None  # Proxy IP pool for automatic proxy refresh
         self._media_downloader: Optional[MediaDownloader] = None
+        # 按作品计：一个作品下了多个文件也只加 1，详情失败或没有文件不加
+        self._downloaded_posts = 0
 
     async def start(self) -> None:
         playwright_proxy_format, httpx_proxy_format = None, None
@@ -223,7 +225,7 @@ class DouYinCrawler(AbstractCrawler):
         await self.batch_get_note_comments(aweme_id_list)
 
     async def get_aweme_detail(self, aweme_id: str, semaphore: asyncio.Semaphore) -> Any:
-        """Get note detail"""
+        """只返回作品详情。记录和视频文件由调用方在 gather 之后写入。"""
         async with semaphore:
             try:
                 result = await self.dy_client.get_video_by_id(aweme_id)
@@ -275,8 +277,10 @@ class DouYinCrawler(AbstractCrawler):
                 utils.logger.error(f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} get comments failed, error: {e}")
 
     async def get_creators_and_videos(self) -> None:
-        """
-        Get the information and videos of the specified creator from URLs or IDs
+        """按创作者拉取作品。列表按页回调，每页详情齐了就下载，不是等全部作品到齐。
+
+        作品列表里没有可下载的播放地址，所以回调里还要再请求一次详情。
+        评论要等该创作者的列表翻完才开始，不跟视频下载穿插。
         """
         utils.logger.info("[DouYinCrawler.get_creators_and_videos] Begin get douyin creators")
         utils.logger.info("[DouYinCrawler.get_creators_and_videos] Parsing creator URLs...")
@@ -294,24 +298,61 @@ class DouYinCrawler(AbstractCrawler):
             if creator_info:
                 await douyin_store.save_creator(user_id, creator=creator_info)
 
-            # Get all video information of the creator
+            # callback 在每一页内部会等详情和下载结束，这里返回时该创作者的视频文件已经落盘
             all_video_list = await self.dy_client.get_all_user_aweme_posts(sec_user_id=user_id, callback=self.fetch_creator_video_detail)
 
             video_ids = [video_item.get("aweme_id") for video_item in all_video_list]
             await self.batch_get_note_comments(video_ids)
 
-    async def fetch_creator_video_detail(self, video_list: List[Dict]):
+    async def fetch_creator_video_detail(self, video_list: List[Dict], page_no: int = 1) -> None:
+        """处理一页作品：先并发拉详情，再逐条写记录并下载视频。
+
+        列表项只有 aweme_id。gather 只覆盖这一页，下载放在循环里是为了不并行写文件。
+        单条详情失败返回 None，跳过该条，不挡住这一页剩下的作品。
+        页码从 1 开始。进度按作品计，一条作品多个文件也只算一次。
         """
-        Concurrently obtain the specified post list and save the data
-        """
+        page_size = len(video_list)
+        utils.logger.info(
+            "[DouYinCrawler.fetch_creator_video_detail] 第 %s 页，本页 %s 条，累计已下载 %s 个",
+            page_no,
+            page_size,
+            self._downloaded_posts,
+        )
         semaphore = asyncio.Semaphore(config.MAX_CONCURRENCY_NUM)
         task_list = [self.get_aweme_detail(post_item.get("aweme_id"), semaphore) for post_item in video_list]
 
         note_details = await asyncio.gather(*task_list)
-        for aweme_item in note_details:
-            if aweme_item is not None:
-                await douyin_store.update_douyin_aweme(aweme_item=aweme_item)
-                await self.download_media(aweme_item=aweme_item)
+        page_saved = 0
+        for index, aweme_item in enumerate(note_details, start=1):
+            if aweme_item is None:
+                utils.logger.info(
+                    "[DouYinCrawler.fetch_creator_video_detail] 第 %s 页 %s/%s 无详情，累计已下载 %s 个",
+                    page_no,
+                    index,
+                    page_size,
+                    self._downloaded_posts,
+                )
+                continue
+            await douyin_store.update_douyin_aweme(aweme_item=aweme_item)
+            saved_files = await self.download_media(aweme_item=aweme_item)
+            if saved_files:
+                self._downloaded_posts += 1
+                page_saved += 1
+            utils.logger.info(
+                "[DouYinCrawler.fetch_creator_video_detail] 第 %s 页 %s/%s，本条文件 %s 个，累计已下载 %s 个",
+                page_no,
+                index,
+                page_size,
+                saved_files,
+                self._downloaded_posts,
+            )
+        utils.logger.info(
+            "[DouYinCrawler.fetch_creator_video_detail] 第 %s 页完成，本页 %s 条，本页下载 %s 个，累计已下载 %s 个",
+            page_no,
+            page_size,
+            page_saved,
+            self._downloaded_posts,
+        )
 
     async def create_douyin_client(self, httpx_proxy: Optional[str]) -> DouYinClient:
         """Create douyin client"""
@@ -406,24 +447,39 @@ class DouYinCrawler(AbstractCrawler):
             await self.browser_context.close()
         utils.logger.info("[DouYinCrawler.close] Browser context closed ...")
 
-    async def download_media(self, aweme_item: Dict) -> None:
+    async def download_media(self, aweme_item: Dict) -> int:
         """下载抖音作品的媒体资源（图集图片，或视频 + 封面）
 
         Args:
             aweme_item (Dict): 抖音作品详情
+
+        Returns:
+            实际落盘的文件数。未开启下载、没有可下文件或下载失败时为 0。
         """
         if not config.ENABLE_GET_MEDIA:
-            return
+            return 0
         try:
+            creator_id = douyin_media.extract_creator_id(aweme_item)
             items = apply_creator_video_layout(
                 douyin_media.build_media_items(aweme_item),
-                douyin_media.extract_creator_id(aweme_item),
+                creator_id,
+                douyin_media.note_title(aweme_item),
             )
-            if items:
-                await self._get_media_downloader().download_all(items)
+            if not items:
+                return 0
+            downloader = self._get_media_downloader()
+            save_creator_profile(
+                downloader.base_dir,
+                downloader.platform,
+                creator_id,
+                douyin_media.creator_profile(aweme_item),
+            )
+            saved = await downloader.download_all(items)
+            return len(saved)
         except Exception as exc:
             # 媒体下载是旁路能力，解析异常/网络异常都不能中断爬取主流程
             utils.logger.error(f"[DouYinCrawler.download_media] 媒体下载异常: {exc}")
+            return 0
 
     def _get_media_downloader(self) -> MediaDownloader:
         """惰性创建媒体下载器，并同步最新的代理与 UA（代理池是就地刷新的）"""

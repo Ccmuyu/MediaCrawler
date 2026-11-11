@@ -65,6 +65,10 @@
     "mediaSaveLayoutHint": "默认仍是原来的方案。新方案只下载视频，并放到以创作者 ID 命名的目录。",
     "mediaSaveLayoutPost": "原来的方案：每个作品一个目录（封面 + 视频）",
     "mediaSaveLayoutCreator": "新方案：仅视频，放到创作者 ID 目录",
+    "mediaFileName": "文件命名",
+    "mediaFileNameHint": "只对创作者 ID 目录生效。标题可能重复，重复时会在文件名后加上作品 ID。",
+    "mediaFileNameTitle": "作品标题",
+    "mediaFileNameId": "作品 ID",
     "headlessMode": "无头模式",
     "headlessModeHint": "无 GUI 运行浏览器"
   },

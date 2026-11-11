@@ -85,6 +85,24 @@ def extract_creator_id(view: Dict) -> str:
     return "" if mid is None else str(mid)
 
 
+def note_title(view: Dict) -> str:
+    """作品标题，用稿件标题。标题为空时文件名退回作品 ID。"""
+    return str(_as_dict(view).get("title") or "").strip()
+
+
+def creator_profile(view: Dict) -> Dict[str, str]:
+    """作者卡片：昵称、UID、签名、空间主页。"""
+    owner = _as_dict(_as_dict(view).get("owner"))
+    mid = owner.get("mid")
+    user_id = "" if mid is None else str(mid).strip()
+    return {
+        "nickname": str(owner.get("name") or "").strip(),
+        "account": user_id,
+        "signature": str(owner.get("sign") or "").strip(),
+        "homepage": f"https://space.bilibili.com/{user_id}" if user_id else "",
+    }
+
+
 def build_cover_item(view: Dict, content_id: str) -> Optional[MediaItem]:
     """封面地址来自稿件详情里的 pic 字段"""
     cover_url = _as_dict(view).get("pic")

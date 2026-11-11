@@ -64,7 +64,8 @@ CONTENT_TYPE_EXTENSIONS = {
     "audio/aac": ".m4a",
 }
 
-_ILLEGAL_CHARS = re.compile(r"[^A-Za-z0-9._-]")
+# 只去掉路径非法字符。汉字标题要能当文件名，不能按 ASCII 洗成下划线。
+_ILLEGAL_CHARS = re.compile(r'[\x00-\x1f<>:"/\\|?*\[\]]')
 # 从 URL 路径里提取扩展名，兼容 "img.jpg!large" 这类 CDN 后缀写法
 _URL_EXTENSION = re.compile(r"\.([A-Za-z0-9]{2,5})(?:!.*)?$")
 _WINDOWS_RESERVED = frozenset(
@@ -80,6 +81,8 @@ _WINDOWS_RESERVED = frozenset(
 MAX_COMPONENT_LENGTH = 64
 # 创作者 sec_uid 一类 ID 经常超过 64，目录名单独放宽，避免不同创作者被截成同一个文件夹
 CONTENT_ID_MAX_LENGTH = 160
+# 标题文件名要留下「标题_作品ID」，截太短会把区分用的 ID 切掉
+STEM_MAX_LENGTH = 120
 MEDIA_DIR_NAME = "media"
 
 
@@ -107,10 +110,9 @@ def redact_url(url) -> str:
 def sanitize_component(value: str, fallback: str = "unknown", max_length: int = MAX_COMPONENT_LENGTH) -> str:
     """清洗单个路径片段，防止路径穿越与非法字符。
 
-    - 只保留 ``[A-Za-z0-9._-]``，其余替换为 ``_``
-    - 去掉开头的 ``.``，避免隐藏文件与 ``..``
-    - 命中 Windows 保留设备名时加前缀
-    - 超长截断
+    汉字和其它文字保留，否则作品标题会变成一串下划线并且互相覆盖。
+    控制字符、``<>:"/\\|?*[]`` 换成 ``_``。去掉开头的 ``.``，``..`` 换成 ``_``。
+    命中 Windows 保留设备名时加前缀，超长截断。
     """
     cleaned = _ILLEGAL_CHARS.sub("_", (value or "").strip())
     cleaned = cleaned.lstrip(".")
@@ -173,7 +175,7 @@ def build_media_dir(base_dir: Path, platform: str, content_id) -> Path:
 
 def build_file_path(directory: Path, stem: str, extension: str) -> Path:
     """目录内的媒体文件路径：``{directory}/{stem}{ext}``"""
-    safe_stem = sanitize_component(stem, "media")
+    safe_stem = sanitize_component(stem, "media", max_length=STEM_MAX_LENGTH)
     normalized_ext = extension if extension.startswith(".") else f".{extension}"
     return Path(directory) / f"{safe_stem}{normalized_ext.lower()}"
 

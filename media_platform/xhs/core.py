@@ -35,7 +35,7 @@ from tenacity import RetryError
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
-from media_downloader.layout import apply_creator_video_layout
+from media_downloader.layout import apply_creator_video_layout, save_creator_profile
 from model.m_xiaohongshu import NoteUrlInfo, CreatorUrlInfo
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import xhs as xhs_store
@@ -493,12 +493,21 @@ class XiaoHongShuCrawler(AbstractCrawler):
         if not config.ENABLE_GET_MEDIA:
             return
         try:
+            creator_id = xhs_media.extract_creator_id(note_detail)
             items = apply_creator_video_layout(
                 xhs_media.build_media_items(note_detail),
-                xhs_media.extract_creator_id(note_detail),
+                creator_id,
+                xhs_media.note_title(note_detail),
             )
             if items:
-                await self._get_media_downloader().download_all(items)
+                downloader = self._get_media_downloader()
+                save_creator_profile(
+                    downloader.base_dir,
+                    downloader.platform,
+                    creator_id,
+                    xhs_media.creator_profile(note_detail),
+                )
+                await downloader.download_all(items)
         except Exception as exc:
             # 媒体下载是旁路能力，解析异常/网络异常都不能中断爬取主流程
             utils.logger.error(f"[XiaoHongShuCrawler.download_media] 媒体下载异常: {exc}")

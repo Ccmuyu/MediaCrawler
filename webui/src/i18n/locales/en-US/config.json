@@ -65,6 +65,10 @@
     "mediaSaveLayoutHint": "The previous layout stays the default. The new one keeps videos only, in a folder named with the creator id.",
     "mediaSaveLayoutPost": "Previous: one folder per post (cover + video)",
     "mediaSaveLayoutCreator": "New: videos only, in a creator-id folder",
+    "mediaFileName": "File name",
+    "mediaFileNameHint": "Applies to the creator-id folder. Duplicate titles get the post ID appended.",
+    "mediaFileNameTitle": "Post title",
+    "mediaFileNameId": "Post ID",
     "headlessMode": "Headless mode",
     "headlessModeHint": "Run browser without GUI"
   },

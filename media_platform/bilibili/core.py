@@ -43,7 +43,7 @@ from playwright._impl._errors import TargetClosedError
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader, is_ffmpeg_available
-from media_downloader.layout import apply_creator_video_layout_item
+from media_downloader.layout import apply_creator_video_layout_item, save_creator_profile
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import bilibili as bilibili_store
 from tools import utils
@@ -620,10 +620,19 @@ class BilibiliCrawler(AbstractCrawler):
         downloader = self._get_media_downloader()
         creator_id = bili_media.extract_creator_id(video_item_view)
 
+        def save_author() -> None:
+            save_creator_profile(
+                downloader.base_dir,
+                downloader.platform,
+                creator_id,
+                bili_media.creator_profile(video_item_view),
+            )
+
         # 封面、DASH 和直链是分次构造的，都要过布局；否则创作者模式下封面仍会单独落盘
         cover_item = apply_creator_video_layout_item(
             bili_media.build_cover_item(video_item_view, content_id),
             creator_id,
+            bili_media.note_title(video_item_view),
         )
         if cover_item is not None:
             await downloader.download(cover_item)
@@ -651,9 +660,11 @@ class BilibiliCrawler(AbstractCrawler):
                 dash_item = apply_creator_video_layout_item(
                     bili_media.build_dash_item(play_info, content_id, preferred_quality=quality),
                     creator_id,
+                    bili_media.note_title(video_item_view),
                 )
                 if dash_item is None:
                     break
+                save_author()
                 if await downloader.download(dash_item) is not None:
                     return
                 lower_quality = bili_media.next_lower_quality(play_info, quality)
@@ -672,6 +683,7 @@ class BilibiliCrawler(AbstractCrawler):
         durl_item = apply_creator_video_layout_item(
             bili_media.build_durl_item(durl_play_info, content_id),
             creator_id,
+            bili_media.note_title(video_item_view),
         )
         if durl_item is None:
             # DASH 请求不会返回 durl，需要再按 mp4 格式请求一次
@@ -682,6 +694,7 @@ class BilibiliCrawler(AbstractCrawler):
             durl_item = apply_creator_video_layout_item(
                 bili_media.build_durl_item(durl_play_info, content_id),
                 creator_id,
+                bili_media.note_title(video_item_view),
             )
 
         if durl_item is None:
@@ -698,6 +711,7 @@ class BilibiliCrawler(AbstractCrawler):
                 f"确认本机 ffmpeg 可用后走 DASH 路径可获取完整视频"
             )
 
+        save_author()
         await downloader.download(durl_item)
 
     def _get_media_downloader(self) -> MediaDownloader:
