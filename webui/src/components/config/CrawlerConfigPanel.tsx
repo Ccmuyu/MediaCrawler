@@ -421,6 +421,23 @@ export function CrawlerConfigPanel() {
                       </SelectContent>
                     </Select>
                   </Field>
+                  <Field label={t('field.mediaFileName')} hint={t('field.mediaFileNameHint')}>
+                    <Select
+                      value={config.media_file_name || 'title'}
+                      onValueChange={(value) =>
+                        updateConfig({ media_file_name: value as 'id' | 'title' })
+                      }
+                      disabled={isDisabled}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="title">{t('field.mediaFileNameTitle')}</SelectItem>
+                        <SelectItem value="id">{t('field.mediaFileNameId')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
               ) : null}
               <OptionRow

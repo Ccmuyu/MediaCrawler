@@ -27,6 +27,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Dict, List
 from urllib.parse import urlsplit
 
@@ -139,6 +140,35 @@ def extract_creator_id(mblog: Dict) -> str:
         return ""
     creator_id = user.get("id") or ""
     return str(creator_id)
+
+
+def note_title(mblog: Dict) -> str:
+    """作品标题。微博正文带 HTML，先去掉标签，否则文件名里会留下 <a>。"""
+    if not isinstance(mblog, dict):
+        return ""
+    text = re.sub(r"<.*?>", "", str(mblog.get("text") or ""))
+    return " ".join(text.split())
+
+
+def creator_profile(mblog: Dict) -> Dict[str, str]:
+    """作者卡片：昵称、用户 ID、简介、主页。性别、IP 和粉丝数不写入。"""
+    user = mblog.get("user") if isinstance(mblog, dict) else None
+    if not isinstance(user, dict):
+        user = {}
+    user_id = str(user.get("id") or "").strip()
+    profile_url = str(user.get("profile_url") or "").strip()
+    if profile_url.startswith("http"):
+        homepage = profile_url
+    elif user_id:
+        homepage = f"https://weibo.com/u/{user_id}"
+    else:
+        homepage = ""
+    return {
+        "nickname": str(user.get("screen_name") or "").strip(),
+        "account": user_id,
+        "signature": str(user.get("description") or "").strip(),
+        "homepage": homepage,
+    }
 
 
 def build_media_items(mblog: Dict) -> List[MediaItem]:

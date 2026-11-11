@@ -112,6 +112,30 @@ def extract_creator_id(video_item: Dict) -> str:
     return ""
 
 
+def note_title(video_item: Dict) -> str:
+    """作品标题，用 photo.caption。没有正文时文件名退回作品 ID。"""
+    if not isinstance(video_item, dict):
+        return ""
+    photo = video_item.get("photo")
+    if not isinstance(photo, dict):
+        return ""
+    return str(photo.get("caption") or "").strip()
+
+
+def creator_profile(video_item: Dict) -> Dict[str, str]:
+    """作者卡片：昵称、快手号、简介、主页。目录 id 来自 photo 时昵称可能为空。"""
+    author = video_item.get("author") if isinstance(video_item, dict) else None
+    if not isinstance(author, dict):
+        author = {}
+    creator_id = extract_creator_id(video_item) if isinstance(video_item, dict) else ""
+    return {
+        "nickname": str(author.get("name") or "").strip(),
+        "account": str(author.get("kwaiId") or "").strip(),
+        "signature": str(author.get("description") or "").strip(),
+        "homepage": f"https://www.kuaishou.com/profile/{creator_id}" if creator_id else "",
+    }
+
+
 def build_media_items(video_item: Dict) -> List[MediaItem]:
     """把一个快手作品转换成待下载的媒体任务列表：封面 + 视频"""
     if not isinstance(video_item, dict):

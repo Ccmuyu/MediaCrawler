@@ -90,3 +90,19 @@ async def test_media_save_layout_defaults_to_post():
     await parse_cmd(BASE_ARGS)
 
     assert config.MEDIA_SAVE_LAYOUT == "post"
+
+
+@pytest.mark.asyncio
+async def test_media_file_name_defaults_to_title():
+    args = await parse_cmd(BASE_ARGS)
+
+    assert config.MEDIA_FILE_NAME == "title"
+    assert args.media_file_name == "title"
+
+
+@pytest.mark.asyncio
+async def test_media_file_name_id_sets_config():
+    args = await parse_cmd([*BASE_ARGS, "--media_file_name", "id"])
+
+    assert config.MEDIA_FILE_NAME == "id"
+    assert args.media_file_name == "id"

@@ -105,6 +105,31 @@ def extract_creator_id(aweme_item: Dict) -> str:
     return str(creator_id)
 
 
+def note_title(aweme_item: Dict) -> str:
+    """作品标题。抖音没有单独标题，用视频文案；文案为空时文件名退回作品 ID。"""
+    if not isinstance(aweme_item, dict):
+        return ""
+    return str(aweme_item.get("desc") or "").strip()
+
+
+def creator_profile(aweme_item: Dict) -> Dict[str, str]:
+    """作者卡片：昵称、抖音号、签名、主页。
+
+    主页只用 sec_uid。数字 uid 拼出来的链接打不开，没有 sec_uid 时主页留空。
+    """
+    author = aweme_item.get("author") if isinstance(aweme_item, dict) else None
+    if not isinstance(author, dict):
+        author = {}
+    sec_uid = str(author.get("sec_uid") or "").strip()
+    account = str(author.get("unique_id") or author.get("short_id") or "").strip()
+    return {
+        "nickname": str(author.get("nickname") or "").strip(),
+        "account": account,
+        "signature": str(author.get("signature") or "").strip(),
+        "homepage": f"https://www.douyin.com/user/{sec_uid}" if sec_uid else "",
+    }
+
+
 def extract_live_photo_video_urls(image: Dict) -> List[str]:
     """提取实况图/动图随附的短视频候选地址列表。
 

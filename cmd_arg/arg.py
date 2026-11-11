@@ -72,6 +72,13 @@ class MediaSaveLayoutEnum(str, Enum):
     CREATOR = "creator"
 
 
+class MediaFileNameEnum(str, Enum):
+    """How files are named inside a creator folder."""
+
+    ID = "id"
+    TITLE = "title"
+
+
 class SaveDataOptionEnum(str, Enum):
     """Data save option enumeration"""
 
@@ -242,6 +249,16 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         ] = _coerce_enum(
             MediaSaveLayoutEnum, config.MEDIA_SAVE_LAYOUT, MediaSaveLayoutEnum.POST
         ),
+        media_file_name: Annotated[
+            MediaFileNameEnum,
+            typer.Option(
+                "--media_file_name",
+                help="File name inside a creator folder (title=post title, append the post id when titles collide | id=post id)",
+                rich_help_panel="Storage Configuration",
+            ),
+        ] = _coerce_enum(
+            MediaFileNameEnum, config.MEDIA_FILE_NAME, MediaFileNameEnum.TITLE
+        ),
         headless: Annotated[
             str,
             typer.Option(
@@ -382,6 +399,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         config.ENABLE_GET_SUB_COMMENTS = enable_sub_comment
         config.ENABLE_GET_MEDIA = enable_media
         config.MEDIA_SAVE_LAYOUT = media_save_layout.value
+        config.MEDIA_FILE_NAME = media_file_name.value
         config.HEADLESS = enable_headless
         config.CDP_HEADLESS = enable_headless
         config.SAVE_DATA_OPTION = save_data_option.value
@@ -440,6 +458,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
             get_sub_comment=config.ENABLE_GET_SUB_COMMENTS,
             get_media=config.ENABLE_GET_MEDIA,
             media_save_layout=config.MEDIA_SAVE_LAYOUT,
+            media_file_name=config.MEDIA_FILE_NAME,
             headless=config.HEADLESS,
             save_data_option=config.SAVE_DATA_OPTION,
             init_db=init_db_value,
