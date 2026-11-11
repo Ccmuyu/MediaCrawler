@@ -229,9 +229,10 @@ class DouYinCrawler(AbstractCrawler):
         async with semaphore:
             try:
                 result = await self.dy_client.get_video_by_id(aweme_id)
-                # Sleep after fetching aweme detail
-                await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
-                utils.logger.info(f"[DouYinCrawler.get_aweme_detail] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching aweme {aweme_id}")
+                # 固定间隔容易被识别成脚本，详情请求后在 0.1 到 2 秒之间随机停一下
+                sleep_sec = random.uniform(0.1, 2)
+                await asyncio.sleep(sleep_sec)
+                utils.logger.info(f"[DouYinCrawler.get_aweme_detail] Sleeping for {sleep_sec:.2f} seconds after fetching aweme {aweme_id}")
                 return result
             except DataFetchError as ex:
                 utils.logger.error(f"[DouYinCrawler.get_aweme_detail] Get aweme detail error: {ex}")
