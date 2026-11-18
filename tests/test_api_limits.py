@@ -93,6 +93,7 @@ def test_api_schema_defaults_match_page():
     request = CrawlerStartRequest(platform=PlatformEnum.XHS, keywords="test")
     assert request.enable_media is True
     assert request.enable_comments is False
+    assert request.media_save_layout.value == "creator"
 
 
 def test_empty_search_target_is_rejected():

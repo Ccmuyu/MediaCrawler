@@ -406,7 +406,7 @@ export function CrawlerConfigPanel() {
                 <div className="mb-2 ml-7 border-l border-cyber-border-DEFAULT py-2 pl-8">
                   <Field label={t('field.mediaSaveLayout')} hint={t('field.mediaSaveLayoutHint')}>
                     <Select
-                      value={config.media_save_layout || 'post'}
+                      value={config.media_save_layout || 'creator'}
                       onValueChange={(value) =>
                         updateConfig({ media_save_layout: value as 'post' | 'creator' })
                       }

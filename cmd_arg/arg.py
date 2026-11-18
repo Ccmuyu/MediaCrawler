@@ -247,7 +247,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 rich_help_panel="Storage Configuration",
             ),
         ] = _coerce_enum(
-            MediaSaveLayoutEnum, config.MEDIA_SAVE_LAYOUT, MediaSaveLayoutEnum.POST
+            MediaSaveLayoutEnum, config.MEDIA_SAVE_LAYOUT, MediaSaveLayoutEnum.CREATOR
         ),
         media_file_name: Annotated[
             MediaFileNameEnum,

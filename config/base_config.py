@@ -114,7 +114,7 @@ ENABLE_GET_MEDIA = False
 # post: 每个作品一个目录，保存封面和视频（或图文图片）
 # creator: 只下载视频，全部放到以创作者 ID 命名的目录里
 # 命令行开关：--media_save_layout
-MEDIA_SAVE_LAYOUT = "post"
+MEDIA_SAVE_LAYOUT = "creator"
 
 # 创作者目录里的视频文件名。仅当 MEDIA_SAVE_LAYOUT 为 creator 时生效。
 # title: 用作品标题，标题重复时在后面加上作品 ID

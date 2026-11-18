@@ -57,7 +57,7 @@ const defaultConfig: CrawlerConfig = {
   enable_comments: false,
   enable_sub_comments: false,
   enable_media: true,
-  media_save_layout: 'post',
+  media_save_layout: 'creator',
   media_file_name: 'title',
   save_option: 'json',
   cookies: '',

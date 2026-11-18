@@ -61,7 +61,7 @@ def creator_video_layout_enabled() -> bool:
     """创作者模式且选择了「仅视频、按创作者 ID 归档」时才改目录。"""
     if getattr(config, "CRAWLER_TYPE", "") != "creator":
         return False
-    return str(getattr(config, "MEDIA_SAVE_LAYOUT", MEDIA_SAVE_LAYOUT_POST)) == MEDIA_SAVE_LAYOUT_CREATOR
+    return str(getattr(config, "MEDIA_SAVE_LAYOUT", MEDIA_SAVE_LAYOUT_CREATOR)) == MEDIA_SAVE_LAYOUT_CREATOR
 
 
 def media_file_name_mode() -> str:

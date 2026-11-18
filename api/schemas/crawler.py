@@ -84,7 +84,7 @@ class CrawlerStartRequest(BaseModel):
     enable_comments: bool = False
     enable_sub_comments: bool = False
     enable_media: bool = True
-    media_save_layout: MediaSaveLayoutEnum = MediaSaveLayoutEnum.POST
+    media_save_layout: MediaSaveLayoutEnum = MediaSaveLayoutEnum.CREATOR
     media_file_name: MediaFileNameEnum = MediaFileNameEnum.TITLE
     save_option: SaveDataOptionEnum = SaveDataOptionEnum.JSONL
     cookies: str = ""

@@ -23,7 +23,7 @@ from cmd_arg import parse_cmd
 @pytest.fixture(autouse=True)
 def _isolate_config(monkeypatch):
     monkeypatch.setattr(config, "ENABLE_GET_MEDIA", False)
-    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "post")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
     monkeypatch.setattr(config, "PLATFORM", "xhs")
     monkeypatch.setattr(config, "CRAWLER_TYPE", "search")
     yield
@@ -86,10 +86,10 @@ async def test_media_save_layout_creator_sets_config():
 
 
 @pytest.mark.asyncio
-async def test_media_save_layout_defaults_to_post():
+async def test_media_save_layout_defaults_to_creator():
     await parse_cmd(BASE_ARGS)
 
-    assert config.MEDIA_SAVE_LAYOUT == "post"
+    assert config.MEDIA_SAVE_LAYOUT == "creator"
 
 
 @pytest.mark.asyncio
