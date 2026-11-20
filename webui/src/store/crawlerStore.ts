@@ -49,7 +49,7 @@ function saveClearedLogIdToStorage(id: number | null): void {
 const defaultConfig: CrawlerConfig = {
   platform: 'dy',
   login_type: 'qrcode',
-  crawler_type: 'search',
+  crawler_type: 'creator',
   keywords: '',
   specified_ids: '',
   creator_ids: '',

@@ -10,12 +10,37 @@
     "loading": "Reading the data folder",
     "noData": "No files yet",
     "noDataHint": "Start a crawl and the results will show up here.",
-    "allCategories": "All"
+    "allCategories": "All",
+    "creators": "Creators",
+    "mode": {
+      "creator": "Creator",
+      "search": "Search",
+      "detail": "Detail",
+      "other": "Other"
+    }
   },
   "file": {
     "entries": "{{count}} entries",
     "extract": "Download",
-    "preview": "Preview"
+    "preview": "Preview",
+    "works": "Works"
+  },
+  "works": {
+    "back": "Back",
+    "page": "{{page}} / {{pages}} · {{total}}",
+    "prev": "Previous",
+    "next": "Next",
+    "prevItem": "Previous",
+    "nextItem": "Next",
+    "loading": "Loading works",
+    "error": "Could not read works",
+    "empty": "No works in this file",
+    "notDownloaded": "Not downloaded",
+    "liked": "{{count}} likes",
+    "comment": "{{count}} comments",
+    "collected": "{{count}} saves",
+    "noLocal": "No local file to play",
+    "openSource": "Original"
   },
   "preview": {
     "title": "Preview",

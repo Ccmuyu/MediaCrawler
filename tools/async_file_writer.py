@@ -21,11 +21,36 @@ import csv
 import json
 import os
 import pathlib
+import time
 from typing import Dict, List
 import aiofiles
 import config
+from media_downloader.paths import CONTENT_ID_MAX_LENGTH, sanitize_component
 from tools.utils import utils
 from tools.words import AsyncWordCloudGenerator
+
+_CONTENT_ID_KEYS = ("aweme_id", "note_id", "video_id")
+
+
+def _record_month(item: Dict) -> str:
+    """按作品发布时间分月。没有可用时间时用写入当月。"""
+    for key in ("create_time", "time"):
+        raw = item.get(key)
+        if raw in (None, ""):
+            continue
+        try:
+            stamp = int(float(raw))
+        except (TypeError, ValueError):
+            text = str(raw)
+            if len(text) >= 7 and text[4] == "-":
+                return text[:7]
+            continue
+        if stamp > 10**12:
+            stamp //= 1000
+        if stamp <= 0:
+            continue
+        return time.strftime("%Y-%m", time.localtime(stamp))
+    return utils.get_current_date()[:7]
 
 class AsyncFileWriter:
     def __init__(self, platform: str, crawler_type: str):
@@ -34,11 +59,13 @@ class AsyncFileWriter:
         self.crawler_type = crawler_type
         self.wordcloud_generator = AsyncWordCloudGenerator() if config.ENABLE_GET_WORDCLOUD else None
 
-    def _get_file_path(self, file_type: str, item_type: str) -> str:
+    def _store_root(self) -> str:
         if config.SAVE_DATA_PATH:
-            base_path = f"{config.SAVE_DATA_PATH}/{self.platform}/{file_type}"
-        else:
-            base_path = f"data/{self.platform}/{file_type}"
+            return f"{config.SAVE_DATA_PATH}/{self.platform}/{self.crawler_type}"
+        return f"data/{self.platform}/{self.crawler_type}"
+
+    def _get_file_path(self, file_type: str, item_type: str) -> str:
+        base_path = f"{self._store_root()}/{file_type}"
         pathlib.Path(base_path).mkdir(parents=True, exist_ok=True)
         file_name = f"{self.crawler_type}_{item_type}_{utils.get_current_date()}.{file_type}"
         return f"{base_path}/{file_name}"
@@ -53,13 +80,62 @@ class AsyncFileWriter:
                     await writer.writeheader()
                 await writer.writerow(item)
 
+    def _creator_contents_path(self, creator_id: str, month: str) -> str:
+        safe = sanitize_component(creator_id, fallback="", max_length=CONTENT_ID_MAX_LENGTH)
+        return f"{self._store_root()}/{safe}/contents_{month}.jsonl"
+
+    async def _write_creator_content(self, item: Dict) -> bool:
+        """创作者模式的作品按创作者 ID 写成一份 JSONL，同一作品只留最新一条。"""
+        if self.crawler_type != "creator" or not isinstance(item, dict):
+            return False
+        creator_id = str(item.get("sec_uid") or item.get("creator_id") or "").strip()
+        if not sanitize_component(creator_id, fallback="", max_length=CONTENT_ID_MAX_LENGTH):
+            return False
+        content_key = ""
+        content_id = ""
+        for key in _CONTENT_ID_KEYS:
+            value = str(item.get(key) or "").strip()
+            if value:
+                content_key = key
+                content_id = value
+                break
+        if not content_id:
+            return False
+
+        record = {key: value for key, value in item.items() if key != "creator_hash"}
+        file_path = self._creator_contents_path(creator_id, _record_month(record))
+        async with self.lock:
+            kept: List[str] = []
+            if os.path.exists(file_path):
+                async with aiofiles.open(file_path, "r", encoding="utf-8") as handle:
+                    content = await handle.read()
+                for line in content.splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        old = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if str(old.get(content_key) or "").strip() == content_id:
+                        continue
+                    kept.append(json.dumps(old, ensure_ascii=False))
+            kept.append(json.dumps(record, ensure_ascii=False))
+            pathlib.Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+            async with aiofiles.open(file_path, "w", encoding="utf-8") as handle:
+                await handle.write("\n".join(kept) + "\n")
+        return True
+
     async def write_to_jsonl(self, item: Dict, item_type: str):
+        if item_type == "contents" and await self._write_creator_content(item):
+            return
         file_path = self._get_file_path('jsonl', item_type)
         async with self.lock:
             async with aiofiles.open(file_path, 'a', encoding='utf-8') as f:
                 await f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     async def write_single_item_to_json(self, item: Dict, item_type: str):
+        if item_type == "contents" and await self._write_creator_content(item):
+            return
         file_path = self._get_file_path('json', item_type)
         async with self.lock:
             existing_data = []
@@ -132,10 +208,7 @@ class AsyncFileWriter:
                 return
 
             # Generate wordcloud
-            if config.SAVE_DATA_PATH:
-                words_base_path = f"{config.SAVE_DATA_PATH}/{self.platform}/words"
-            else:
-                words_base_path = f"data/{self.platform}/words"
+            words_base_path = f"{self._store_root()}/words"
             pathlib.Path(words_base_path).mkdir(parents=True, exist_ok=True)
             words_file_prefix = f"{words_base_path}/{self.crawler_type}_comments_{utils.get_current_date()}"
 

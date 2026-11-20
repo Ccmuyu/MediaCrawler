@@ -4,7 +4,6 @@ import { ChevronDown, ChevronUp, Trash2, RefreshCw } from 'lucide-react'
 import { TerminalLine } from './TerminalLine'
 import { useCrawlerStore } from '@/store/crawlerStore'
 import { Button } from '@/components/ui/button'
-import { DataExplorerDialog } from '@/components/data/DataExplorerDialog'
 
 export function Terminal() {
   const { t } = useTranslation('terminal')
@@ -44,8 +43,6 @@ export function Terminal() {
         </div>
 
         <div className="flex items-center gap-1">
-          <DataExplorerDialog />
-
           {clearedAfterLogId !== null && (
             <Button
               variant="ghost"

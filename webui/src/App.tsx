@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MainContent } from '@/components/layout/MainContent'
 import { CrawlerConfigPanel } from '@/components/config/CrawlerConfigPanel'
+import { DataExplorer } from '@/components/data/DataExplorer'
 import { EnvironmentCheck, isEnvChecked } from '@/components/env/EnvironmentCheck'
 import { LicenseDisclaimer, isLicenseAccepted } from '@/components/license/LicenseDisclaimer'
 
@@ -10,6 +11,7 @@ function App() {
   const [licenseAccepted, setLicenseAccepted] = useState(() => isLicenseAccepted())
   const [envChecked, setEnvChecked] = useState(() => isEnvChecked())
   const [showDisclaimer, setShowDisclaimer] = useState(false)
+  const [page, setPage] = useState<'crawl' | 'data'>('crawl')
 
   const handleEnvCheckComplete = () => {
     setEnvChecked(true)
@@ -34,15 +36,19 @@ function App() {
         <EnvironmentCheck onCheckComplete={handleEnvCheckComplete} />
       )}
 
-      <Sidebar onShowDisclaimer={handleShowDisclaimer} />
+      <Sidebar page={page} onPageChange={setPage} onShowDisclaimer={handleShowDisclaimer} />
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(280px,1.05fr)_minmax(220px,0.95fr)] lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:grid-rows-1">
+      <div className={page === 'crawl' ? 'grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(280px,1.05fr)_minmax(220px,0.95fr)] lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:grid-rows-1' : 'hidden'}>
         <div className="flex h-full min-h-0 flex-col overflow-hidden border-b border-cyber-border-subtle bg-cyber-bg-panel lg:border-b-0 lg:border-r">
           <CrawlerConfigPanel />
         </div>
         <div className="flex min-h-0 flex-col p-3 sm:p-4 lg:p-5">
           <MainContent />
         </div>
+      </div>
+
+      <div className={page === 'data' ? 'min-h-0 flex-1 overflow-hidden p-4 sm:p-5' : 'hidden'}>
+        <DataExplorer />
       </div>
 
       <Toaster

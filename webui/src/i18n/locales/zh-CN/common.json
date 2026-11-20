@@ -7,6 +7,10 @@
     "stopping": "停止中",
     "error": "错误"
   },
+  "nav": {
+    "crawl": "采集",
+    "data": "数据管理"
+  },
   "sidebar": {
     "title": "MediaCrawler",
     "api": "API",

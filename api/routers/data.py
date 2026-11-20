@@ -19,10 +19,21 @@
 import os
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import FileResponse, StreamingResponse
+
+from ..services.works import (
+    count_jsonl_records,
+    creator_works_page,
+    list_creators,
+    media_type_for,
+    preview_jsonl,
+    relative_posix,
+    resolve_data_path,
+    works_page,
+)
 
 router = APIRouter(prefix="/data", tags=["data"])
 
@@ -42,6 +53,8 @@ def get_file_info(file_path: Path) -> dict:
                 data = json.load(f)
                 if isinstance(data, list):
                     record_count = len(data)
+        elif file_path.suffix == ".jsonl":
+            record_count = count_jsonl_records(file_path)
         elif file_path.suffix == ".csv":
             with open(file_path, "r", encoding="utf-8") as f:
                 record_count = sum(1 for _ in f) - 1  # Subtract header row
@@ -50,7 +63,7 @@ def get_file_info(file_path: Path) -> dict:
 
     return {
         "name": file_path.name,
-        "path": str(file_path.relative_to(DATA_DIR)),
+        "path": relative_posix(DATA_DIR, file_path),
         "size": stat.st_size,
         "modified_at": stat.st_mtime,
         "record_count": record_count,
@@ -65,13 +78,15 @@ async def list_data_files(platform: Optional[str] = None, file_type: Optional[st
         return {"files": []}
 
     files = []
-    supported_extensions = {".json", ".csv", ".xlsx", ".xls"}
+    supported_extensions = {".json", ".jsonl", ".csv", ".xlsx", ".xls"}
 
     for root, dirs, filenames in os.walk(DATA_DIR):
         root_path = Path(root)
         for filename in filenames:
             file_path = root_path / filename
             if file_path.suffix.lower() not in supported_extensions:
+                continue
+            if _hidden_from_browser(file_path):
                 continue
 
             # Platform filter
@@ -121,6 +136,9 @@ async def get_file_content(file_path: str, preview: bool = True, limit: int = 10
                     if isinstance(data, list):
                         return {"data": data[:limit], "total": len(data)}
                     return {"data": data, "total": 1}
+            elif full_path.suffix.lower() == ".jsonl":
+                rows, total = preview_jsonl(full_path, limit)
+                return {"data": rows, "total": total}
             elif full_path.suffix == ".csv":
                 import csv
                 with open(full_path, "r", encoding="utf-8") as f:
@@ -200,7 +218,7 @@ async def get_data_stats():
         "by_type": {}
     }
 
-    supported_extensions = {".json", ".csv", ".xlsx", ".xls"}
+    supported_extensions = {".json", ".jsonl", ".csv", ".xlsx", ".xls"}
 
     for root, dirs, filenames in os.walk(DATA_DIR):
         root_path = Path(root)
@@ -228,3 +246,101 @@ async def get_data_stats():
                 continue
 
     return stats
+
+
+def _hidden_from_browser(file_path: Path) -> bool:
+    """按日期堆在一起的创作者内容，以及创作者目录里的文案文件，不进文件卡片。"""
+    if file_path.name.startswith("creator_contents_"):
+        return True
+    if "creator" not in file_path.parts and "creators" not in file_path.parts:
+        return False
+    name = file_path.name
+    return name == "contents.jsonl" or (name.startswith("contents_") and name.endswith(".jsonl"))
+
+
+@router.get("/creators")
+async def list_creator_catalog():
+    """创作者目录。work_count 是该目录里的作品数。"""
+    return {"creators": list_creators(DATA_DIR)}
+
+
+@router.get("/works")
+async def list_works(
+    file: str = "",
+    platform: str = "",
+    creator: str = "",
+    offset: int = Query(0, ge=0),
+    limit: int = Query(24, ge=1, le=100),
+):
+    """作品墙。传 creator 时按创作者目录分页，总数和目录里的作品文件数一致。"""
+    if creator:
+        return creator_works_page(DATA_DIR, platform, creator, offset, limit)
+    if not file:
+        raise HTTPException(status_code=400, detail="file or creator is required")
+    return works_page(DATA_DIR, file, offset, limit)
+
+
+def _file_chunks(path: Path, start: int, length: int) -> Iterator[bytes]:
+    remaining = length
+    with path.open("rb") as handle:
+        handle.seek(start)
+        while remaining > 0:
+            chunk = handle.read(min(64 * 1024, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+
+
+@router.get("/media/{file_path:path}")
+async def get_media(file_path: str, request: Request):
+    """给图片和视频标签用。带 Range，播放时可以拖进度。"""
+    full_path = resolve_data_path(DATA_DIR, file_path)
+    if not full_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    media_type = media_type_for(full_path.suffix)
+    if media_type is None:
+        raise HTTPException(status_code=403, detail="Unsupported media type")
+
+    size = full_path.stat().st_size
+    start = 0
+    end = size - 1
+    status = 200
+    range_header = request.headers.get("range")
+    if range_header and size > 0:
+        unit, _, span = range_header.partition("=")
+        if unit.strip() != "bytes" or "-" not in span:
+            raise HTTPException(status_code=416, detail="Invalid range")
+        start_text, end_text = span.split("-", 1)
+        if start_text == "" and end_text == "":
+            raise HTTPException(status_code=416, detail="Invalid range")
+        try:
+            if start_text == "":
+                suffix = int(end_text)
+                if suffix <= 0:
+                    raise ValueError
+                start = max(0, size - suffix)
+            else:
+                start = int(start_text)
+                end = int(end_text) if end_text else size - 1
+        except ValueError:
+            raise HTTPException(status_code=416, detail="Invalid range")
+        if start >= size or start > end:
+            raise HTTPException(
+                status_code=416,
+                headers={"Content-Range": f"bytes */{size}"},
+                detail="Range not satisfiable",
+            )
+        end = min(end, size - 1)
+        status = 206
+
+    length = 0 if size == 0 else end - start + 1
+    headers = {"Accept-Ranges": "bytes", "Content-Length": str(length)}
+    if status == 206:
+        headers["Content-Range"] = f"bytes {start}-{end}/{size}"
+    return StreamingResponse(
+        _file_chunks(full_path, start, length),
+        status_code=status,
+        media_type=media_type,
+        headers=headers,
+    )

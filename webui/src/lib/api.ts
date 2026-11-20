@@ -55,6 +55,41 @@ export interface FilePreviewResponse {
   columns?: string[]
 }
 
+export interface WorkVideo {
+  path: string
+  stem: string
+}
+
+export interface WorkItem {
+  id: string
+  title: string
+  author: string
+  source_url: string
+  stats: { liked: string; comment: string; collected: string }
+  downloaded: boolean
+  cover: string | null
+  images: string[]
+  video: string | null
+  videos: WorkVideo[]
+}
+
+export interface WorksPage {
+  total: number
+  file: string
+  platform: string
+  creator_id?: string
+  items: WorkItem[]
+}
+
+export interface DataCreator {
+  platform: string
+  creator_id: string
+  nickname: string
+  avatar: string | null
+  work_count: number
+  modified_at: number
+}
+
 export interface Platform {
   value: string
   label: string
@@ -79,8 +114,15 @@ export const dataApi = {
     api.get<{ files: DataFile[] }>('/data/files', { params: { platform, file_type: fileType } }),
   getFileContent: (path: string, limit = 100) =>
     api.get<FilePreviewResponse>('/data/files/' + path, { params: { preview: true, limit } }),
+  getCreators: () => api.get<{ creators: DataCreator[] }>('/data/creators'),
+  getWorks: (file: string, offset = 0, limit = 24) =>
+    api.get<WorksPage>('/data/works', { params: { file, offset, limit } }),
+  getCreatorWorks: (platform: string, creator: string, offset = 0, limit = 24) =>
+    api.get<WorksPage>('/data/works', { params: { platform, creator, offset, limit } }),
   getStats: () => api.get('/data/stats'),
   getDownloadUrl: (path: string) => `/api/data/download/${path}`,
+  getMediaUrl: (path: string) =>
+    '/api/data/media/' + path.split('/').map((part) => encodeURIComponent(part)).join('/'),
 }
 
 export const configApi = {

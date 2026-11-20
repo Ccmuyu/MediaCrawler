@@ -7,10 +7,12 @@ import { LanguageSwitch } from './LanguageSwitch'
 import { ThemeToggle } from './ThemeToggle'
 
 interface SidebarProps {
+  page: 'crawl' | 'data'
+  onPageChange: (page: 'crawl' | 'data') => void
   onShowDisclaimer?: () => void
 }
 
-export function Sidebar({ onShowDisclaimer }: SidebarProps) {
+export function Sidebar({ page, onPageChange, onShowDisclaimer }: SidebarProps) {
   const { t } = useTranslation()
   const status = useCrawlerStore((state) => state.status)
 
@@ -32,6 +34,23 @@ export function Sidebar({ onShowDisclaimer }: SidebarProps) {
           {isRunning ? t('status.running') : t('status.idle')}
         </span>
       </div>
+
+      <nav className="flex items-center rounded-full border border-cyber-border-subtle bg-cyber-bg-primary p-1">
+        {(['crawl', 'data'] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onPageChange(item)}
+            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+              page === item
+                ? 'bg-cyber-neon-cyan text-cyber-bg-primary'
+                : 'text-cyber-text-secondary hover:text-cyber-text-primary'
+            }`}
+          >
+            {t(item === 'crawl' ? 'nav.crawl' : 'nav.data')}
+          </button>
+        ))}
+      </nav>
 
       <div className="flex items-center gap-1 sm:gap-2">
         <BackendSwitch />

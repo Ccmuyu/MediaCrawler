@@ -41,16 +41,62 @@ def test_post_layout_keeps_cover_and_video(monkeypatch):
     assert {item.content_id for item in placed} == {AWEME_ID}
 
 
-def test_creator_layout_keeps_only_videos_under_creator_id(monkeypatch):
+def test_douyin_creator_folder_keeps_cover_beside_video(monkeypatch):
     monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
     monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "PLATFORM", "dy")
+
+    placed = apply_creator_video_layout(_video_and_cover(), CREATOR_ID)
+
+    assert [(item.media_type, item.stem, item.content_id) for item in placed] == [
+        (MediaType.VIDEO, AWEME_ID, CREATOR_ID),
+        (MediaType.IMAGE, AWEME_ID, CREATOR_ID),
+    ]
+
+
+def test_cover_reuses_the_video_title(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "MEDIA_FILE_NAME", "title")
+    monkeypatch.setattr(config, "PLATFORM", "xhs")
+    monkeypatch.setattr(config, "SAVE_DATA_PATH", str(tmp_path))
+
+    placed = apply_creator_video_layout(_video_and_cover(), CREATOR_ID, "夏天的风")
+
+    assert [item.stem for item in placed] == ["夏天的风", "夏天的风"]
+    assert placed[0].media_type is MediaType.VIDEO
+    assert placed[1].media_type is MediaType.IMAGE
+
+
+def test_image_post_keeps_the_first_picture_as_cover(monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "PLATFORM", "dy")
+    monkeypatch.setattr(config, "MEDIA_FILE_NAME", "id")
+    images = [
+        MediaItem(url="https://cdn/1.jpg", media_type=MediaType.IMAGE, content_id="note", stem="001"),
+        MediaItem(url="https://cdn/2.jpg", media_type=MediaType.IMAGE, content_id="note", stem="002"),
+        MediaItem(url="https://cdn/1.mp4", media_type=MediaType.VIDEO, content_id="note", stem="001_live"),
+    ]
+
+    placed = apply_creator_video_layout(images, CREATOR_ID, "图文")
+
+    assert [(item.media_type, item.stem, item.url) for item in placed] == [
+        (MediaType.VIDEO, "note_001_live", "https://cdn/1.mp4"),
+        (MediaType.IMAGE, "note", "https://cdn/1.jpg"),
+    ]
+
+
+def test_other_platforms_still_skip_covers(monkeypatch):
+    monkeypatch.setattr(config, "CRAWLER_TYPE", "creator")
+    monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", "creator")
+    monkeypatch.setattr(config, "PLATFORM", "ks")
 
     placed = apply_creator_video_layout(_video_and_cover(), CREATOR_ID)
 
     assert len(placed) == 1
     assert placed[0].media_type is MediaType.VIDEO
     assert placed[0].content_id == CREATOR_ID
-    assert placed[0].stem == AWEME_ID
 
 
 def test_creator_layout_ignored_outside_creator_mode(monkeypatch):
@@ -183,7 +229,11 @@ def test_creator_folder_saves_author_file(tmp_path, monkeypatch):
     path = save_creator_profile(tmp_path, "dy", CREATOR_ID, profile)
 
     assert path is not None
-    assert path.parent.name == CREATOR_ID
+    assert path.parent.name == "meta"
+    assert path.parent.parent.name == CREATOR_ID
+    assert douyin_media.extract_avatar_urls({
+        "user": {"avatar_larger": {"url_list": ["https://cdn.example/a.jpg", "https://cdn.example/a.jpg"]}},
+    }) == ["https://cdn.example/a.jpg"]
     assert path.read_text(encoding="utf-8") == (
         "昵称: 创作者甲\n"
         "账号: dy_account\n"
@@ -266,6 +316,7 @@ def test_empty_title_falls_back_to_post_id(monkeypatch):
 def test_image_posts_are_skipped_only_in_creator_folder_mode(monkeypatch, crawler_type, layout, enabled_videos):
     monkeypatch.setattr(config, "CRAWLER_TYPE", crawler_type)
     monkeypatch.setattr(config, "MEDIA_SAVE_LAYOUT", layout)
+    monkeypatch.setattr(config, "PLATFORM", "bili")
     images = [
         MediaItem(url="https://cdn/1.jpg", media_type=MediaType.IMAGE, content_id="note", stem="001"),
     ]

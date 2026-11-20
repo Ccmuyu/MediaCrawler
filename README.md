@@ -229,7 +229,7 @@ data/xhs/media/{帖子ID}/
 └── 001_live.mp4  # 对应图片的实况随附视频（有实况时）
 ```
 
-创作者模式可以改成只下载视频，并按创作者 ID 归档。WebUI 在「下载媒体」打开后选择「仅视频，按创作者 ID 归档」，或：
+创作者模式可以改成按创作者 ID 归档。抖音和小红书有封面时和视频一起保存（图文只留第一张），快手、B 站、微博仍只保存视频。WebUI 在「下载媒体」打开后选择「创作者目录」，或：
 
 ```shell
 uv run main.py --platform dy --type creator --creator_id <创作者URL或ID> --get_media true --media_save_layout creator
@@ -237,11 +237,11 @@ uv run main.py --platform dy --type creator --creator_id <创作者URL或ID> --g
 
 ```
 data/dy/media/{创作者ID}/
-├── {作品ID}.mp4
-└── {作品ID}.mp4
+├── {标题}.mp4
+└── {标题}.jpg          # 抖音、小红书有封面时，和视频同名
 ```
 
-图文作品在这种布局下会跳过。未指定时仍是 `--media_save_layout post`。
+图文作品只留下第一张图。文件名默认用标题，`--media_file_name id` 改回作品 ID。
 
 **支持平台**：小红书、抖音、快手、B站、微博。贴吧与知乎的数据结构中没有媒体字段，暂不支持。
 

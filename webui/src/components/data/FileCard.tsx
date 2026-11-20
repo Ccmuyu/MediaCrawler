@@ -8,9 +8,11 @@ import { dataApi } from '@/lib/api'
 import { formatFileSize, formatDateTime } from '@/lib/utils'
 import { DataPreviewDialog } from './preview/DataPreviewDialog'
 import type { DataFile } from '@/types/crawler'
+import { isWorksFile } from './worksFile'
 
 interface FileCardProps {
   file: DataFile
+  onOpenWorks?: (file: DataFile) => void
 }
 
 const fileIcons: Record<string, typeof FileJson> = {
@@ -39,9 +41,10 @@ const fileStyles: Record<string, { icon: string; badge: string }> = {
   },
 }
 
-export function FileCard({ file }: FileCardProps) {
+export function FileCard({ file, onOpenWorks }: FileCardProps) {
   const { t } = useTranslation('data')
   const [previewOpen, setPreviewOpen] = useState(false)
+  const openAsWorks = isWorksFile(file) && Boolean(onOpenWorks)
 
   const Icon = fileIcons[file.type] || FileText
   const styles = fileStyles[file.type] || {
@@ -86,7 +89,16 @@ export function FileCard({ file }: FileCardProps) {
               {file.type.toUpperCase()}
             </Badge>
             <div className="flex gap-1">
-              {isPreviewable && (
+              {openAsWorks ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenWorks?.(file)}
+                >
+                  <Eye className="h-3 w-3" />
+                  {t('file.works')}
+                </Button>
+              ) : isPreviewable && (
                 <Button
                   variant="ghost"
                   size="sm"

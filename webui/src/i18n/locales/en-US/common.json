@@ -7,6 +7,10 @@
     "stopping": "Stopping",
     "error": "Error"
   },
+  "nav": {
+    "crawl": "Crawl",
+    "data": "Data"
+  },
   "sidebar": {
     "title": "MediaCrawler",
     "api": "API",

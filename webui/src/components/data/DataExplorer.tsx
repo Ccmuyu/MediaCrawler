@@ -1,43 +1,100 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { FolderOpen, RefreshCw } from 'lucide-react'
-import { dataApi } from '@/lib/api'
+import { FolderOpen, RefreshCw, UserRound, Eye } from 'lucide-react'
+import { dataApi, type DataCreator } from '@/lib/api'
 import { FileCard } from './FileCard'
+import { WorksGallery } from './WorksGallery'
+import type { DataFile } from '@/types/crawler'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
-// 从文件名提取类别
-function extractCategory(filename: string): string {
-  // 文件名格式: search_comments_xxx, search_creators_xxx, search_videos_xxx 等
-  const match = filename.match(/^(search_\w+?)_/)
-  if (match) {
-    return match[1]
+const CRAWL_MODES = ['creator', 'search', 'detail'] as const
+
+function extractMode(file: DataFile): string {
+  const folder = file.path.split(/[/\\]/)[1]?.toLowerCase()
+  if (folder && (CRAWL_MODES as readonly string[]).includes(folder)) {
+    return folder
   }
-  // 其他格式尝试提取前缀
-  const parts = filename.split('_')
-  if (parts.length >= 2) {
-    return `${parts[0]}_${parts[1]}`
+  const prefix = file.name.split('_')[0]?.toLowerCase()
+  if (prefix && (CRAWL_MODES as readonly string[]).includes(prefix)) {
+    return prefix
   }
   return 'other'
 }
 
-// 类别显示名称
-function getCategoryLabel(category: string): string {
-  const labels: Record<string, string> = {
-    'search_comments': 'Comments',
-    'search_creators': 'Creators',
-    'search_videos': 'Videos',
-    'search_contents': 'Contents',
-    'search_notes': 'Notes',
-    'other': 'Other',
-  }
-  return labels[category] || category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+const PLATFORM_LABEL: Record<string, string> = {
+  dy: 'Douyin',
+  xhs: 'Xiaohongshu',
+  ks: 'Kuaishou',
+  bili: 'Bilibili',
+  wb: 'Weibo',
+}
+
+function CreatorCard({ creator, onOpen }: { creator: DataCreator; onOpen: (creator: DataCreator) => void }) {
+  const { t } = useTranslation('data')
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer"
+      onClick={() => onOpen(creator)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen(creator)
+        }
+      }}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          {creator.avatar ? (
+            <img
+              src={dataApi.getMediaUrl(creator.avatar)}
+              alt=""
+              className="h-9 w-9 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="rounded-lg bg-cyber-bg-primary p-2 text-cyber-neon-cyan">
+              <UserRound className="h-5 w-5" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm text-cyber-text-primary" title={creator.nickname}>
+              {creator.nickname}
+            </h3>
+            <p className="mt-1 text-xs text-cyber-text-muted">
+              {t('file.entries', { count: creator.work_count })}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-cyber-border-subtle pt-3">
+          <Badge variant="outline">{PLATFORM_LABEL[creator.platform] || creator.platform}</Badge>
+          <Button variant="ghost" size="sm" tabIndex={-1}>
+            <Eye className="h-3 w-3" />
+            {t('file.works')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function DataExplorer() {
   const { t } = useTranslation('data')
   const [activeTab, setActiveTab] = useState<string>('all')
+  const [worksFile, setWorksFile] = useState<DataFile | null>(null)
+  const [worksCreator, setWorksCreator] = useState<DataCreator | null>(null)
+
+  const openWorks = (file: DataFile) => {
+    setWorksFile(file)
+  }
+
+  const closeWorks = () => {
+    setWorksFile(null)
+    setWorksCreator(null)
+  }
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['dataFiles'],
@@ -46,31 +103,39 @@ export function DataExplorer() {
       return data.files
     },
   })
+  const creatorsQuery = useQuery({
+    queryKey: ['dataCreators'],
+    queryFn: async () => {
+      const { data } = await dataApi.getCreators()
+      return data.creators
+    },
+  })
 
   const files = data || []
+  const creators = creatorsQuery.data || []
 
-  // 按类别分组文件
-  const { categories, groupedFiles } = useMemo(() => {
+  const groupedFiles = useMemo(() => {
     const grouped: Record<string, typeof files> = {}
-
     files.forEach(file => {
-      const category = extractCategory(file.name)
-      if (!grouped[category]) {
-        grouped[category] = []
-      }
-      grouped[category].push(file)
+      const mode = extractMode(file)
+      if (!grouped[mode]) grouped[mode] = []
+      grouped[mode].push(file)
     })
-
-    // 按文件数量排序类别
-    const sortedCategories = Object.keys(grouped).sort((a, b) =>
-      grouped[b].length - grouped[a].length
-    )
-
-    return { categories: sortedCategories, groupedFiles: grouped }
+    return grouped
   }, [files])
 
-  // 当前显示的文件
-  const displayFiles = activeTab === 'all' ? files : (groupedFiles[activeTab] || [])
+  const modes = CRAWL_MODES.filter(mode => mode === 'creator' ? creators.length > 0 : (groupedFiles[mode]?.length ?? 0) > 0)
+  const showCreators = activeTab === 'all' || activeTab === 'creator'
+  const displayFiles = activeTab === 'all' ? files : activeTab === 'creator' ? [] : (groupedFiles[activeTab] || [])
+  const visibleCount = (showCreators ? creators.length : 0) + displayFiles.length
+
+  if (worksCreator) {
+    return <WorksGallery creator={worksCreator} onBack={closeWorks} />
+  }
+
+  if (worksFile) {
+    return <WorksGallery file={worksFile} onBack={closeWorks} />
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -81,14 +146,17 @@ export function DataExplorer() {
             {t('explorer.title')}
           </h2>
           <Badge variant="default">
-            {t('explorer.records', { count: files.length })}
+            {t('explorer.records', { count: visibleCount })}
           </Badge>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => refetch()}
-          disabled={isRefetching}
+          onClick={() => {
+            refetch()
+            creatorsQuery.refetch()
+          }}
+          disabled={isRefetching || creatorsQuery.isRefetching}
         >
           <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
           {t('explorer.rescan')}
@@ -96,7 +164,7 @@ export function DataExplorer() {
       </div>
 
       {/* Category Tabs */}
-      {files.length > 0 && categories.length > 1 && (
+      {(files.length > 0 || creators.length > 0) && (
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <button
             onClick={() => setActiveTab('all')}
@@ -106,32 +174,43 @@ export function DataExplorer() {
                 : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary'
             }`}
           >
-            {t('explorer.allCategories')} ({files.length})
+            {t('explorer.allCategories')} ({files.length + creators.length})
           </button>
-          {categories.map(category => (
+          {modes.map(mode => (
             <button
-              key={category}
-              onClick={() => setActiveTab(category)}
+              key={mode}
+              onClick={() => setActiveTab(mode)}
               className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
-                activeTab === category
+                activeTab === mode
                   ? 'bg-cyber-neon-cyan text-cyber-bg-primary'
                   : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary'
               }`}
             >
-              {getCategoryLabel(category)} ({groupedFiles[category].length})
+              {t(`explorer.mode.${mode}`)} ({mode === 'creator' ? creators.length : (groupedFiles[mode]?.length ?? 0)})
             </button>
           ))}
+          {(groupedFiles.other?.length ?? 0) > 0 && (
+            <button
+              onClick={() => setActiveTab('other')}
+              className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
+                activeTab === 'other'
+                  ? 'bg-cyber-neon-cyan text-cyber-bg-primary'
+                  : 'bg-cyber-bg-tertiary text-cyber-text-secondary hover:text-cyber-text-primary'
+              }`}
+            >
+              {t('explorer.mode.other')} ({groupedFiles.other.length})
+            </button>
+          )}
         </div>
       )}
 
-      {/* Content */}
-      {isLoading ? (
+      {isLoading || creatorsQuery.isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-sm text-cyber-text-muted">
             {t('explorer.loading')}
           </div>
         </div>
-      ) : files.length === 0 ? (
+      ) : files.length === 0 && creators.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <FolderOpen className="mb-4 h-8 w-8 text-cyber-text-muted" />
           <h3 className="mb-2 font-serif text-lg text-cyber-text-primary">
@@ -142,10 +221,30 @@ export function DataExplorer() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {displayFiles.map((file) => (
-            <FileCard key={file.path} file={file} />
-          ))}
+        <div className="min-h-0 flex-1 overflow-auto">
+          {showCreators && creators.length > 0 && (
+            <div className="mb-6">
+              <h3 className="mb-3 text-sm text-cyber-text-secondary">
+                {t('explorer.creators')} ({creators.length})
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {creators.map((creator) => (
+                  <CreatorCard
+                    key={`${creator.platform}/${creator.creator_id}`}
+                    creator={creator}
+                    onOpen={setWorksCreator}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {displayFiles.length > 0 && (
+            <div className="grid grid-cols-1 content-start gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {displayFiles.map((file) => (
+                <FileCard key={file.path} file={file} onOpenWorks={openWorks} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

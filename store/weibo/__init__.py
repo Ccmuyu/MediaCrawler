@@ -83,8 +83,7 @@ async def update_weibo_note(note_item: Dict):
     note_id = mblog.get("id")
     content_text = mblog.get("text")
     clean_text = re.sub(r"<.*?>", "", content_text)
-    # 教学版：原始 user_id 匿名化为 creator_hash，昵称脱敏；
-    # 不采集头像/主页链接/性别/IP 归属地等可定位真人的信息。
+    # 创作者 ID 与媒体目录一致。不采集头像、主页、性别、IP 归属地。
     save_content_item = {
         # Weibo information
         "note_id": note_id,
@@ -96,9 +95,7 @@ async def update_weibo_note(note_item: Dict):
         "shared_count": str(mblog.get("reposts_count", 0)),
         "last_modify_ts": utils.get_current_timestamp(),
         "note_url": f"https://m.weibo.cn/detail/{note_id}",
-
-        # 创作者信息（匿名化/脱敏，不含原始 user_id/avatar/gender/profile_url/ip_location）
-        "creator_hash": anonymize_user_id(user_info.get("id")),
+        "creator_id": str(user_info.get("id") or "").strip(),
         "nickname": mask_nickname(user_info.get("screen_name", "")),
         "source_keyword": source_keyword_var.get(),
     }

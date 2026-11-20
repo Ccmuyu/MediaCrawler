@@ -16,13 +16,11 @@
 # 详细许可条款请参阅项目根目录下的LICENSE文件。
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 #
-# 教学版说明：为防止爬取到的用户个人信息被用于定位真人并私信骚扰，
-# 本 ORM 不再持久化任何可识别用户的字段（用户 ID、IP 归属地、头像、
-# 主页链接、签名、性别等一律不落库）。原始用户 ID 在提取层经
-# tools.user_hash.anonymize_user_id 转为匿名 creator_hash 后写入，
-# 仅用于"同一创作者"的内容分组；昵称保留但经 mask_nickname 中间脱敏。
-# 创作者个人档案表（XhsCreator/DyCreator/WeiboCreator/TiebaCreator/
-# ZhihuCreator/BilibiliUpInfo/BilibiliContactInfo）已整体移除。
+# 教学版说明：不持久化头像、签名、性别、IP 归属地、主页链接。
+# 抖音、小红书、快手、B 站、微博的作品表保存创作者目录 ID
+# （抖音列名 sec_uid，其余为 creator_id），和媒体目录是同一个值。
+# 评论仍只存 creator_hash。昵称按接口原文保存。
+# 创作者个人档案表已整体移除。
 
 from sqlalchemy import create_engine, Column, Integer, Text, String, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
@@ -35,7 +33,7 @@ class BilibiliVideo(Base):
     id = Column(Integer, primary_key=True, comment='主键ID')
     video_id = Column(String(64), nullable=False, index=True, unique=True, comment='视频ID')
     video_url = Column(Text, nullable=False, comment='视频URL')
-    creator_hash = Column(String(64), index=True, comment='创作者匿名哈希')
+    creator_id = Column(String(255), index=True, comment='创作者 ID')
     nickname = Column(Text, comment='用户昵称(已脱敏)')
     liked_count = Column(Integer, comment='点赞数')
     add_ts = Column(BigInteger, comment='添加时间戳')
@@ -87,7 +85,7 @@ class BilibiliUpDynamic(Base):
 class DouyinAweme(Base):
     __tablename__ = 'douyin_aweme'
     id = Column(Integer, primary_key=True, comment='主键ID')
-    creator_hash = Column(String(64), index=True, comment='创作者匿名哈希')
+    sec_uid = Column(String(255), index=True, comment='创作者 sec_uid')
     nickname = Column(Text, comment='用户昵称(已脱敏)')
     add_ts = Column(BigInteger, comment='添加时间戳')
     last_modify_ts = Column(BigInteger, comment='最后修改时间戳')
@@ -126,7 +124,7 @@ class DouyinAwemeComment(Base):
 class KuaishouVideo(Base):
     __tablename__ = 'kuaishou_video'
     id = Column(Integer, primary_key=True, comment='主键ID')
-    creator_hash = Column(String(64), index=True, comment='创作者匿名哈希')
+    creator_id = Column(String(255), index=True, comment='创作者 ID')
     nickname = Column(Text, comment='用户昵称(已脱敏)')
     add_ts = Column(BigInteger, comment='添加时间戳')
     last_modify_ts = Column(BigInteger, comment='最后修改时间戳')
@@ -158,7 +156,7 @@ class KuaishouVideoComment(Base):
 class WeiboNote(Base):
     __tablename__ = 'weibo_note'
     id = Column(Integer, primary_key=True, comment='主键ID')
-    creator_hash = Column(String(64), index=True, comment='创作者匿名哈希')
+    creator_id = Column(String(255), index=True, comment='创作者 ID')
     nickname = Column(Text, comment='用户昵称(已脱敏)')
     add_ts = Column(BigInteger, comment='添加时间戳')
     last_modify_ts = Column(BigInteger, comment='最后修改时间戳')
@@ -191,7 +189,7 @@ class WeiboNoteComment(Base):
 class XhsNote(Base):
     __tablename__ = 'xhs_note'
     id = Column(Integer, primary_key=True, comment='主键ID')
-    creator_hash = Column(String(64), index=True, comment='创作者匿名哈希')
+    creator_id = Column(String(255), index=True, comment='创作者 ID')
     nickname = Column(Text, comment='用户昵称(已脱敏)')
     add_ts = Column(BigInteger, comment='添加时间戳')
     last_modify_ts = Column(BigInteger, comment='最后修改时间戳')

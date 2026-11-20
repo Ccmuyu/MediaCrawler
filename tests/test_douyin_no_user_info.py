@@ -43,7 +43,7 @@ from tools.user_hash import anonymize_user_id, mask_nickname
 
 # 抖音教学版禁用字段(键):不得作为存储 dict 的 key 出现。
 FORBIDDEN_KEYS = {
-    "user_id", "sec_uid", "short_user_id", "user_unique_id",
+    "user_id", "short_user_id", "user_unique_id",
     "avatar", "user_signature", "ip_location",
 }
 
@@ -157,7 +157,7 @@ def _assert_raw_values_absent(captured: dict, raw_values, label: str):
         if not rv:
             continue
         for k, v in captured.items():
-            if k == "creator_hash":
+            if k in {"creator_hash", "sec_uid"}:
                 continue
             if isinstance(v, str) and rv in v:
                 leaked.append((k, rv))
@@ -194,14 +194,9 @@ def test_douyin_aweme_masks_user_info():
     _assert_no_forbidden(captured, "douyin_aweme")
     # 2. 原始敏感值不泄漏到任何存储值
     _assert_raw_values_absent(captured, raw_sensitive, "douyin_aweme")
-    # 3. creator_hash 存在、≠原 uid、与 anonymize_user_id 一致
-    assert captured.get("creator_hash")
-    assert captured["creator_hash"] != raw_uid
-    assert captured["creator_hash"] == anonymize_user_id(raw_uid)
-    # 4. nickname 保留但脱敏,≠原文,与 mask_nickname 一致
-    assert captured.get("nickname")
-    assert captured["nickname"] != raw_nick
-    assert captured["nickname"] == mask_nickname(raw_nick)
+    assert captured.get("sec_uid") == aweme["author"]["sec_uid"]
+    assert "creator_hash" not in captured
+    assert captured.get("nickname") == raw_nick
     # 5. 内容字段保留(desc/title 是作品描述,不禁用)
     assert captured.get("desc") == aweme["desc"]
     assert captured.get("title") == aweme["desc"]
@@ -249,9 +244,7 @@ def test_douyin_comment_masks_user_info():
     assert captured.get("creator_hash")
     assert captured["creator_hash"] != raw_uid
     assert captured["creator_hash"] == anonymize_user_id(raw_uid)
-    assert captured.get("nickname")
-    assert captured["nickname"] != raw_nick
-    assert captured["nickname"] == mask_nickname(raw_nick)
+    assert captured.get("nickname") == raw_nick
 
     # 评论内容/ID 保留
     assert captured.get("content") == comment["text"]
@@ -283,10 +276,8 @@ def test_douyin_store_end_to_end_sqlite(monkeypatch):
     # 此处证明 captured 的 key 与删列后 ORM 列完全对得上,不抛异常。
     obj = DouyinAweme(**captured)
     assert obj.aweme_id == aweme["aweme_id"]
-    assert obj.creator_hash == anonymize_user_id(raw_uid)
-    assert obj.creator_hash != raw_uid
-    assert obj.nickname == mask_nickname(raw_nick)
-    assert obj.nickname != raw_nick
+    assert obj.sec_uid == aweme["author"]["sec_uid"]
+    assert obj.nickname == raw_nick
     assert obj.title == aweme["desc"]
     assert obj.desc == aweme["desc"]
     _assert_no_forbidden(captured, "douyin_aweme_orm_construct")
@@ -321,10 +312,8 @@ def test_douyin_store_end_to_end_sqlite(monkeypatch):
     # ---- 4. 回读断言 ----
     assert row is not None, "作品未写入 SQLite"
     assert row.aweme_id == aweme["aweme_id"]
-    assert row.creator_hash == anonymize_user_id(raw_uid)
-    assert row.creator_hash != raw_uid
-    assert row.nickname == mask_nickname(raw_nick)
-    assert row.nickname != raw_nick
+    assert row.sec_uid == aweme["author"]["sec_uid"]
+    assert row.nickname == raw_nick
     assert row.desc == aweme["desc"]
     assert row.title == aweme["desc"]
     assert row.cover_url == "http://x/cover.jpg"

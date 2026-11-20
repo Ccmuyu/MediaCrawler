@@ -139,15 +139,11 @@ def test_kuaishou_video_masks_user_info():
     # 头像字段不应进入存储 dict(author.headerUrl 已被丢弃)
     assert "headerUrl" not in captured and "avatar" not in captured
 
-    # creator_hash 存在且不等于原始 user_id
-    assert captured.get("creator_hash") == anonymize_user_id(MOCK_AUTHOR_ID)
-    assert captured["creator_hash"] != MOCK_AUTHOR_ID
-    assert captured["creator_hash"]  # 非空
+    assert captured.get("creator_id") == MOCK_AUTHOR_ID
+    assert "creator_hash" not in captured
 
     # 昵称已脱敏：等于 mask_nickname(原文) 且不等于原文
-    assert captured.get("nickname") == mask_nickname(MOCK_AUTHOR_NAME)
-    assert captured["nickname"] != MOCK_AUTHOR_NAME
-    assert "*" in captured["nickname"]
+    assert captured.get("nickname") == MOCK_AUTHOR_NAME
 
     # 内容字段保留(video_id / desc / title)
     assert captured["video_id"] == MOCK_VIDEO_ID
@@ -180,9 +176,7 @@ def test_kuaishou_comment_v2_masks_user_info():
     # creator_hash / 昵称
     assert captured["creator_hash"] == anonymize_user_id(MOCK_COMMENT_V2_AUTHOR_ID)
     assert captured["creator_hash"] != MOCK_COMMENT_V2_AUTHOR_ID
-    assert captured["nickname"] == mask_nickname(MOCK_COMMENT_V2_AUTHOR_NAME)
-    assert captured["nickname"] != MOCK_COMMENT_V2_AUTHOR_NAME
-    assert "*" in captured["nickname"]
+    assert captured["nickname"] == MOCK_COMMENT_V2_AUTHOR_NAME
 
 
 def test_kuaishou_comment_legacy_masks_user_info():
@@ -205,9 +199,7 @@ def test_kuaishou_comment_legacy_masks_user_info():
     # creator_hash / 昵称
     assert captured["creator_hash"] == anonymize_user_id(MOCK_COMMENT_LEGACY_AUTHOR_ID)
     assert captured["creator_hash"] != MOCK_COMMENT_LEGACY_AUTHOR_ID
-    assert captured["nickname"] == mask_nickname(MOCK_COMMENT_LEGACY_AUTHOR_NAME)
-    assert captured["nickname"] != MOCK_COMMENT_LEGACY_AUTHOR_NAME
-    assert "*" in captured["nickname"]
+    assert captured["nickname"] == MOCK_COMMENT_LEGACY_AUTHOR_NAME
 
 
 def test_kuaishou_store_end_to_end_sqlite():
@@ -247,10 +239,8 @@ def test_kuaishou_store_end_to_end_sqlite():
         )
         obj = KuaishouVideo(**captured)  # 不抛异常即通过列校验
         assert obj.video_id == MOCK_VIDEO_ID
-        assert obj.creator_hash == anonymize_user_id(MOCK_AUTHOR_ID)
-        assert obj.creator_hash != MOCK_AUTHOR_ID
-        assert obj.nickname == mask_nickname(MOCK_AUTHOR_NAME)
-        assert obj.nickname != MOCK_AUTHOR_NAME
+        assert obj.creator_id == MOCK_AUTHOR_ID
+        assert obj.nickname == MOCK_AUTHOR_NAME
         assert obj.desc == MOCK_CAPTION  # 内容保留
 
         # 3) 真实写库 + 查询回读
@@ -264,10 +254,8 @@ def test_kuaishou_store_end_to_end_sqlite():
             row = res.scalar_one()
             assert row is not None
             assert row.video_id == MOCK_VIDEO_ID
-            assert row.creator_hash == anonymize_user_id(MOCK_AUTHOR_ID)
-            assert row.creator_hash != MOCK_AUTHOR_ID
-            assert row.nickname == mask_nickname(MOCK_AUTHOR_NAME)
-            assert row.nickname != MOCK_AUTHOR_NAME
+            assert row.creator_id == MOCK_AUTHOR_ID
+            assert row.nickname == MOCK_AUTHOR_NAME
             # 内容字段保留
             assert row.desc == MOCK_CAPTION
             assert row.title == MOCK_CAPTION

@@ -75,7 +75,7 @@ async def update_xhs_note(note_item: Dict):
         "video_url": video_url,  # Note video url
         "time": note_item.get("time"),  # Note publish time
         "last_update_time": note_item.get("last_update_time", 0),  # Note last update time
-        "creator_hash": anonymize_user_id(user_info.get("user_id")),  # 创作者匿名哈希(不存原始 user_id)
+        "creator_id": str(user_info.get("user_id") or user_info.get("userid") or "").strip(),
         "nickname": mask_nickname(user_info.get("nickname")),  # 用户昵称(已脱敏)
         "liked_count": interact_info.get("liked_count"),  # Like count
         "collected_count": interact_info.get("collected_count"),  # Collection count

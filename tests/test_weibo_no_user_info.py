@@ -139,18 +139,10 @@ def test_weibo_note_masks_user_info():
     hit = set(captured.keys()) & FORBIDDEN_KEYS
     assert not hit, f"note 存储 dict 仍含禁用字段键: {hit}"
 
-    # 2. creator_hash 存在、是 16 位 hex、不等于原始 user id
-    creator_hash = captured.get("creator_hash")
-    assert creator_hash, "note dict 缺少 creator_hash"
-    assert creator_hash != str(RAW_USER_ID)
-    assert creator_hash != RAW_USER_ID
-    assert len(creator_hash) == 16
+    assert captured.get("creator_id") == str(RAW_USER_ID)
+    assert "creator_hash" not in captured
 
-    # 3. 昵称已脱敏:不等于原文且含星号
-    nickname = captured.get("nickname")
-    assert nickname, "note dict 缺少 nickname"
-    assert nickname != RAW_NICKNAME, "note 昵称未脱敏,仍为原文"
-    assert "*" in nickname, f"note 昵称未脱敏: {nickname}"
+    assert captured.get("nickname") == RAW_NICKNAME
 
     # 4. 内容字段正确(正文存于 content,不是 desc)
     assert "hello" not in captured  # 确认没误存
@@ -186,11 +178,7 @@ def test_weibo_comment_masks_user_info():
     assert creator_hash != RAW_COMMENT_USER_ID
     assert len(creator_hash) == 16
 
-    # 3. 昵称已脱敏
-    nickname = captured.get("nickname")
-    assert nickname, "comment dict 缺少 nickname"
-    assert nickname != RAW_COMMENT_NICKNAME, "comment 昵称未脱敏,仍为原文"
-    assert "*" in nickname, f"comment 昵称未脱敏: {nickname}"
+    assert captured.get("nickname") == RAW_COMMENT_NICKNAME
 
     # 4. 内容字段正确
     assert "说得好" in captured["content"]
@@ -242,9 +230,8 @@ def test_weibo_store_end_to_end_sqlite():
         # 表结构层面无禁用列
         assert not (note_cols & FORBIDDEN_KEYS), \
             f"WeiboNote 表仍含禁用列: {note_cols & FORBIDDEN_KEYS}"
-        # 行数据层面:creator_hash 正确、昵称脱敏、正文保留
-        assert row.creator_hash and row.creator_hash != str(RAW_USER_ID)
-        assert row.nickname != RAW_NICKNAME and "*" in row.nickname
+        assert row.creator_id == str(RAW_USER_ID)
+        assert row.nickname == RAW_NICKNAME
         assert row.note_id == NOTE_ID
         assert "今天天气不错" in row.content
         # 确认没有 desc 列存任何用户描述
@@ -262,7 +249,7 @@ def test_weibo_store_end_to_end_sqlite():
         assert not (comment_cols & FORBIDDEN_KEYS), \
             f"WeiboNoteComment 表仍含禁用列: {comment_cols & FORBIDDEN_KEYS}"
         assert crow.creator_hash and crow.creator_hash != str(RAW_COMMENT_USER_ID)
-        assert crow.nickname != RAW_COMMENT_NICKNAME and "*" in crow.nickname
+        assert crow.nickname == RAW_COMMENT_NICKNAME
         assert crow.comment_id == COMMENT_ID
         assert crow.note_id == NOTE_ID
         assert "说得好" in crow.content

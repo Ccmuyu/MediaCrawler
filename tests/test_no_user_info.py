@@ -9,7 +9,6 @@
 3. 仓库 grep 断言 —— store/ 与 media_platform/ 不再把禁用字段作为存储 dict 的 key。
 """
 import re
-import subprocess
 import pathlib
 
 import pytest
@@ -18,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # 统一的禁用字段名(键)。昵称字段(nickname/user_nickname/screen_name/name/user_name)允许保留(值需脱敏)。
 FORBIDDEN_KEYS = {
-    "user_id", "sec_uid", "short_user_id", "user_unique_id", "user_signature",
+    "user_id", "short_user_id", "user_unique_id", "user_signature",
     "avatar", "user_avatar", "face", "sign", "profile_url", "user_link",
     "url_token", "user_url_token", "ip_location", "ip_address", "gender", "sex",
     "up_id", "fan_id", "up_name", "fan_name", "up_avatar", "fan_avatar",
@@ -52,17 +51,26 @@ def test_creator_tables_removed():
         assert not hasattr(m, t), f"creator 档案表 {t} 仍存在"
 
 
-def test_content_tables_have_creator_hash():
+def test_content_tables_have_creator_identity():
     import database.models as m
     from sqlalchemy.orm import class_mapper
-    content_tables = ["XhsNote", "XhsNoteComment", "WeiboNote", "WeiboNoteComment",
-                      "BilibiliVideo", "BilibiliVideoComment", "BilibiliUpDynamic",
-                      "DouyinAweme", "DouyinAwemeComment", "KuaishouVideo",
-                      "KuaishouVideoComment", "TiebaNote", "TiebaComment",
-                      "ZhihuContent", "ZhihuComment"]
-    for t in content_tables:
-        cols = {c.name for c in class_mapper(getattr(m, t)).columns}
-        assert "creator_hash" in cols, f"{t} 缺少 creator_hash 列"
+    creator_columns = {
+        "DouyinAweme": "sec_uid",
+        "XhsNote": "creator_id",
+        "KuaishouVideo": "creator_id",
+        "WeiboNote": "creator_id",
+        "BilibiliVideo": "creator_id",
+    }
+    hash_tables = ["XhsNoteComment", "WeiboNoteComment", "BilibiliVideoComment",
+                   "BilibiliUpDynamic", "DouyinAwemeComment", "KuaishouVideoComment",
+                   "TiebaNote", "TiebaComment", "ZhihuContent", "ZhihuComment"]
+    for table, column in creator_columns.items():
+        cols = {c.name for c in class_mapper(getattr(m, table)).columns}
+        assert column in cols, f"{table} 缺少 {column}"
+        assert "creator_hash" not in cols, f"{table} 仍使用 creator_hash"
+    for table in hash_tables:
+        cols = {c.name for c in class_mapper(getattr(m, table)).columns}
+        assert "creator_hash" in cols, f"{table} 缺少 creator_hash 列"
 
 
 # ----------------------------- 提取层 mock -----------------------------
@@ -75,13 +83,12 @@ def _check_no_forbidden_keys(d: dict, label: str):
 
 def _check_nickname_masked(d: dict, raw: str, label: str):
     nick_keys = set(d.keys()) & NICK_KEYS
-    assert nick_keys, f"[{label}] 未保留任何昵称字段(应保留并脱敏)"
+    assert nick_keys, f"[{label}] 未保留任何昵称字段"
     for k in nick_keys:
         val = d[k]
         if val in ("", None):
             continue
-        assert val != raw, f"[{label}] {k} 未脱敏，仍为原文: {val}"
-        assert MASK_RE.match(val) or "*" in val, f"[{label}] {k} 未脱敏: {val}"
+        assert val == raw, f"[{label}] {k} 应保存原昵称，实际为: {val}"
 
 
 def test_mask_and_hash_tools():
@@ -89,11 +96,9 @@ def test_mask_and_hash_tools():
     h = anonymize_user_id("12345")
     assert h and h != "12345" and re.fullmatch(r"[0-9a-f]{16}", h)
     assert anonymize_user_id(None) == "" and anonymize_user_id("") == ""
-    # 昵称脱敏：首尾留1字、中间星号，且不等于原文
-    assert mask_nickname("张三丰") != "张三丰"
-    assert "*" in mask_nickname("张三丰")
+    assert mask_nickname("张三丰") == "张三丰"
     assert mask_nickname(None) == ""
-    assert mask_nickname("a") == "*"
+    assert mask_nickname("a") == "a"
 
 
 def test_xhs_note_extraction_masks_user_info():
@@ -125,7 +130,7 @@ def test_xhs_note_extraction_masks_user_info():
     finally:
         xs.XhsStoreFactory.create_store = orig
     _check_no_forbidden_keys(captured, "xhs_note")
-    assert captured.get("creator_hash") != "u123"
+    assert captured.get("creator_id") == "u123"
     _check_nickname_masked(captured, "小红同学", "xhs_note")
 
 
@@ -207,32 +212,33 @@ def test_bilibili_video_dict_masks_user_info():
     finally:
         bs.BiliStoreFactory.create_store = orig
     _check_no_forbidden_keys(captured, "bili_video")
-    assert captured.get("creator_hash") != 777
+    assert captured.get("creator_id") == "777"
     _check_nickname_masked(captured, "UP主大人", "bili_video")
 
 
 # ----------------------------- 仓库 grep 断言 -----------------------------
 
+def _store_lines():
+    for path in (ROOT / "store").rglob("*.py"):
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            yield path, lineno, line
+
+
 def test_store_no_forbidden_dict_keys():
     # store/ 下不得把禁用字段作为存储 dict 的 key("field": value 形式)
-    out = subprocess.run(
-        ["grep", "-rnE", '"(' + "|".join(FORBIDDEN_KEYS) + r')"\s*:', str(ROOT / "store")],
-        capture_output=True, text=True,
-    )
-    # 允许的例外：Mongo store_creator 里的 query={"user_id": ...} 已全部改为 pass，应为空
-    assert out.stdout.strip() == "", f"store/ 仍写入禁用字段键:\n{out.stdout}"
+    key_re = re.compile(r'"(' + "|".join(re.escape(key) for key in FORBIDDEN_KEYS) + r')"\s*:')
+    hits = [f"{path}:{lineno}:{line}" for path, lineno, line in _store_lines() if key_re.search(line)]
+    assert hits == [], "store/ 仍写入禁用字段键:\n" + "\n".join(hits)
 
 
 def test_store_no_creator_orm_imports():
-    # 已删除的 creator ORM 表(XhsCreator/DyCreator/...)不得再从 database.models 导入。
-    # 注意:model/m_*.py 里的同名 pydantic 类是内存类型，允许保留。
-    out = subprocess.run(
-        ["grep", "-rnE",
-         r"from database\.models import.*(XhsCreator|DyCreator|WeiboCreator|TiebaCreator|ZhihuCreator|BilibiliUpInfo|BilibiliContactInfo)",
-         str(ROOT / "store")],
-        capture_output=True, text=True,
+    # 已删除的 creator ORM 表不得再从 database.models 导入。
+    # model/m_*.py 里的同名 pydantic 类是内存类型，允许保留。
+    import_re = re.compile(
+        r"from database\.models import.*(XhsCreator|DyCreator|WeiboCreator|TiebaCreator|ZhihuCreator|BilibiliUpInfo|BilibiliContactInfo)"
     )
-    assert out.stdout.strip() == "", f"store/ 仍 import 已删除的 creator ORM 表:\n{out.stdout}"
+    hits = [f"{path}:{lineno}:{line}" for path, lineno, line in _store_lines() if import_re.search(line)]
+    assert hits == [], "store/ 仍 import 已删除的 creator ORM 表:\n" + "\n".join(hits)
 
 
 if __name__ == "__main__":

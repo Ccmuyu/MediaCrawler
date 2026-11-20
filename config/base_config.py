@@ -28,7 +28,7 @@ KEYWORDS = "编程副业,编程兼职"  # Keyword search configuration, separate
 LOGIN_TYPE = "qrcode"  # qrcode or phone or cookie
 COOKIES = ""
 CRAWLER_TYPE = (
-    "search"  # Crawling type, search (keyword search) | detail (post details) | creator (creator homepage data)
+    "creator"  # Crawling type, search (keyword search) | detail (post details) | creator (creator homepage data)
 )
 # Whether to enable IP proxy
 ENABLE_IP_PROXY = False
@@ -112,7 +112,7 @@ ENABLE_GET_MEDIA = False
 
 # 创作者模式下的媒体目录布局。仅当 CRAWLER_TYPE 为 creator 时生效。
 # post: 每个作品一个目录，保存封面和视频（或图文图片）
-# creator: 只下载视频，全部放到以创作者 ID 命名的目录里
+# creator: 视频放到以创作者 ID 命名的目录里。抖音和小红书有封面时一并保存，图文只留第一张；其他平台只保存视频
 # 命令行开关：--media_save_layout
 MEDIA_SAVE_LAYOUT = "creator"
 

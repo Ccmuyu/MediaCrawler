@@ -112,6 +112,30 @@ def note_title(aweme_item: Dict) -> str:
     return str(aweme_item.get("desc") or "").strip()
 
 
+def extract_avatar_urls(source: Dict) -> list[str]:
+    """头像地址。优先大图，再退到中图和缩略图。
+
+    主页接口的用户对象、作品详情里的 author 都用同一组字段。
+    """
+    if not isinstance(source, dict):
+        return []
+    author = source.get("author") if isinstance(source.get("author"), dict) else None
+    user = source.get("user") if isinstance(source.get("user"), dict) else None
+    candidate = author or user or source
+    urls: list[str] = []
+    seen: set[str] = set()
+    for key in ("avatar_larger", "avatar_medium", "avatar_thumb"):
+        node = candidate.get(key)
+        url_list = node.get("url_list") if isinstance(node, dict) else None
+        if not isinstance(url_list, list):
+            continue
+        for url in url_list:
+            if isinstance(url, str) and url.startswith("http") and url not in seen:
+                seen.add(url)
+                urls.append(url)
+    return urls
+
+
 def creator_profile(aweme_item: Dict) -> Dict[str, str]:
     """作者卡片：昵称、抖音号、签名、主页。
 

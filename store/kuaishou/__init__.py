@@ -64,7 +64,7 @@ async def update_kuaishou_video(video_item: Dict):
         "title": photo_info.get("caption", "")[:500],
         "desc": photo_info.get("caption", "")[:500],
         "create_time": photo_info.get("timestamp"),
-        "creator_hash": anonymize_user_id(user_info.get("id")),  # 创作者匿名哈希(不存原始 user_id)
+        "creator_id": str(user_info.get("id") or "").strip(),
         "nickname": mask_nickname(user_info.get("name")),  # 用户昵称(已脱敏)
         "liked_count": str(photo_info.get("realLikeCount")),
         "viewd_count": str(photo_info.get("viewCount")),

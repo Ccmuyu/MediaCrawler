@@ -34,7 +34,15 @@ from playwright.async_api import (
 import config
 from base.base_crawler import AbstractCrawler
 from media_downloader import MediaDownloader
-from media_downloader.layout import apply_creator_video_layout, save_creator_profile
+from media_downloader.layout import (
+    AVATAR_FILE_NAME,
+    CREATOR_META_DIR,
+    apply_creator_video_layout,
+    creator_video_layout_enabled,
+    relocate_creator_sidecars,
+    save_creator_profile,
+)
+from media_downloader.paths import build_media_dir
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import douyin as douyin_store
 from tools import utils
@@ -47,6 +55,25 @@ from .exception import DataFetchError
 from .field import PublishTimeType
 from .help import extract_douyin_targets, parse_video_info_from_url, parse_creator_info_from_url
 from .login import DouYinLogin
+
+
+def _avatar_filename(content_type: str, body: bytes) -> str:
+    lowered = content_type.lower()
+    if "png" in lowered or body.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "avatar.png"
+    if "webp" in lowered or (body.startswith(b"RIFF") and body[8:12] == b"WEBP"):
+        return "avatar.webp"
+    return AVATAR_FILE_NAME
+
+
+def _looks_like_image(content_type: str, body: bytes) -> bool:
+    if len(body) < 32 or len(body) > 2_000_000:
+        return False
+    if "image" in content_type.lower():
+        return True
+    return body.startswith(b"\xff\xd8") or body.startswith(b"\x89PNG\r\n\x1a\n") or (
+        body.startswith(b"RIFF") and body[8:12] == b"WEBP"
+    )
 
 
 class DouYinCrawler(AbstractCrawler):
@@ -298,6 +325,7 @@ class DouYinCrawler(AbstractCrawler):
             creator_info: Dict = await self.dy_client.get_user_info(user_id)
             if creator_info:
                 await douyin_store.save_creator(user_id, creator=creator_info)
+                await self._ensure_creator_avatar(user_id, douyin_media.extract_avatar_urls(creator_info))
 
             # callback 在每一页内部会等详情和下载结束，这里返回时该创作者的视频文件已经落盘
             all_video_list = await self.dy_client.get_all_user_aweme_posts(sec_user_id=user_id, callback=self.fetch_creator_video_detail)
@@ -475,12 +503,50 @@ class DouYinCrawler(AbstractCrawler):
                 creator_id,
                 douyin_media.creator_profile(aweme_item),
             )
+            await self._ensure_creator_avatar(creator_id, douyin_media.extract_avatar_urls(aweme_item))
             saved = await downloader.download_all(items)
             return len(saved)
         except Exception as exc:
             # 媒体下载是旁路能力，解析异常/网络异常都不能中断爬取主流程
             utils.logger.error(f"[DouYinCrawler.download_media] 媒体下载异常: {exc}")
             return 0
+
+    async def _ensure_creator_avatar(self, creator_id: str, urls: list[str]) -> None:
+        """一个创作者只存一张头像，放在 meta/avatar.jpg。已有文件就不再请求。"""
+        if not urls or not creator_id or not creator_video_layout_enabled() or not config.ENABLE_GET_MEDIA:
+            return
+        downloader = self._get_media_downloader()
+        media_dir = build_media_dir(downloader.base_dir, downloader.platform, creator_id)
+        relocate_creator_sidecars(media_dir)
+        meta = media_dir / CREATOR_META_DIR
+        if any((meta / name).is_file() and (meta / name).stat().st_size > 0 for name in ("avatar.jpg", "avatar.png", "avatar.webp")):
+            return
+        from tools.httpx_util import make_async_client
+
+        try:
+            async with make_async_client(
+                proxy=getattr(self.dy_client, "proxy", None),
+                follow_redirects=True,
+                timeout=30,
+            ) as client:
+                for url in urls[:3]:
+                    try:
+                        response = await client.get(url, headers=self._media_headers())
+                    except Exception:
+                        continue
+                    if response.status_code != 200:
+                        continue
+                    body = response.content
+                    content_type = response.headers.get("content-type", "")
+                    if not _looks_like_image(content_type, body):
+                        continue
+                    dest = meta / _avatar_filename(content_type, body)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(body)
+                    return
+        except Exception as exc:
+            utils.logger.error("[DouYinCrawler._ensure_creator_avatar] 头像下载失败: %s", exc)
+
 
     def _get_media_downloader(self) -> MediaDownloader:
         """惰性创建媒体下载器，并同步最新的代理与 UA（代理池是就地刷新的）"""

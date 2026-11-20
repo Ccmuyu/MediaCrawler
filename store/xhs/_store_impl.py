@@ -137,7 +137,7 @@ class XhsDbStoreImplement(AbstractStore):
         add_ts = int(get_current_timestamp())
         last_modify_ts = int(get_current_timestamp())
         note = XhsNote(
-            creator_hash=content_item.get("creator_hash"),
+            creator_id=content_item.get("creator_id"),
             nickname=content_item.get("nickname"),
             add_ts=add_ts,
             last_modify_ts=last_modify_ts,
